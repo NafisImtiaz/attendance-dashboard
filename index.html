@@ -1,0 +1,1812 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Attendance Dashboard 2026</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        :root {
+            --bg: #eaf4fc; --bg-2: #f8fbfe; --card: #ffffff; --card-2: #f1f8fe;
+            --card-hover: #e4f2fc; --text: #1e293b; --text-muted: #64748b;
+            --accent: #2e9be6; --accent-2: #6fc3f7; --accent-deep: #1c6fb0; --accent-pale: #d7ecfb;
+            --success: #1f8055; --success-soft: #3fae7a; --success-pale: #eafaf2;
+            --warning: #95591a; --warning-soft: #e8a33d; --warning-pale: #fdf5e6;
+            --danger: #b93d31; --danger-soft: #e2685e; --danger-pale: #fdecea;
+            --info: #5546b8; --info-soft: #7c6fe0; --info-pale: #eeecfb;
+            --el: #ef8a4c; --el-text: #b85a24; --cl: #35b6c9; --cl-text: #1a7885; --sl: #e2699d; --sl-text: #b03e6b;
+            --lwp: #64748b; --border: #d9ecf9; --overlay: rgba(28,111,176,0.35);
+            --friday: #eef3f8;
+        }
+        html { min-height: 100%; }
+        body {
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+            background: linear-gradient(160deg, var(--bg) 0%, var(--bg-2) 55%, #ffffff 100%) no-repeat;
+            background-size: 100% 100%; background-color: #ffffff;
+            color: var(--text); min-height: 100vh;
+        }
+
+        /* ---------------- MAIN ---------------- */
+        .main-area { padding: 16px 20px 32px; overflow-x: hidden; }
+        .container { max-width: 1400px; margin: 0 auto; }
+
+        header {
+            position: relative; text-align: center; margin-bottom: 20px; padding: 16px 16px 16px 24px;
+            background: linear-gradient(120deg, #ffffff 0%, var(--accent-pale) 160%);
+            border-radius: 12px; border: 1px solid var(--border);
+            min-height: 84px; display: flex; align-items: center; justify-content: center;
+            box-shadow: 0 4px 24px rgba(46,155,230,0.08);
+        }
+        header .header-logo {
+            position: absolute; left: 16px; top: 16px;
+            height: 32px; width: auto; display: block;
+        }
+        header .header-text { max-width: 100%; }
+        header h1 {
+            font-size: 1.8rem;
+            background: linear-gradient(90deg, var(--accent-deep), var(--accent));
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+            margin-bottom: 4px;
+        }
+        header p { color: var(--text-muted); font-size: 0.95rem; }
+        .year-switcher {
+            display: inline-flex; align-items: center; gap: 2px; padding: 3px;
+            background: #ffffff; border: 1px solid var(--border); border-radius: 999px;
+            box-shadow: 0 2px 10px rgba(46,155,230,0.10);
+        }
+        .year-switcher select {
+            -webkit-appearance: none; appearance: none;
+            background: transparent url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath d='M1 1l4 4 4-4' fill='none' stroke='%231c6fb0' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") no-repeat right 12px center;
+            background-size: 10px 6px;
+            color: var(--text); border: none; border-radius: 999px;
+            padding: 6px 30px 6px 16px; font-family: inherit; font-size: 0.95rem; font-weight: 700;
+            cursor: pointer; outline: none; transition: background-color 0.15s;
+        }
+        .year-switcher select:hover { background-color: var(--accent-pale); }
+        .year-switcher select:focus-visible { box-shadow: 0 0 0 2px var(--accent); }
+        .year-switcher select option { background: #ffffff; color: var(--text); font-weight: 600; }
+        .year-nav-btn {
+            width: 30px; height: 30px; border-radius: 50%; border: none; background: transparent;
+            color: var(--accent-deep); font-size: 1.25rem; line-height: 1; padding-bottom: 2px;
+            cursor: pointer; display: flex; align-items: center; justify-content: center;
+            transition: background-color 0.15s, transform 0.1s;
+        }
+        .year-nav-btn:hover { background: var(--accent-pale); color: #186399; }
+        .year-nav-btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+        .year-nav-btn:active { transform: scale(0.92); }
+        .year-nav-btn:disabled { opacity: 0.35; cursor: default; background: transparent; transform: none; }
+
+        .stats-grid {
+            display: grid; grid-template-columns: repeat(6, 1fr); gap: 10px; margin-bottom: 20px;
+        }
+        .stat-card {
+            background: linear-gradient(160deg, var(--card) 0%, var(--card-2) 100%);
+            border-radius: 10px; padding: 14px 12px;
+            border: 1px solid var(--border); transition: transform 0.2s, box-shadow 0.2s;
+            position: relative; overflow: hidden; text-align: center; cursor: pointer;
+            box-shadow: 0 2px 12px rgba(46,155,230,0.06);
+        }
+        .stat-card:hover { transform: translateY(-3px); box-shadow: 0 10px 24px rgba(46,155,230,0.16); }
+        .stat-card::before {
+            content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px;
+            border-radius: 10px 10px 0 0;
+        }
+        .stat-card.present::before { background: linear-gradient(90deg, var(--success), var(--success-soft)); }
+        .stat-card.late::before { background: linear-gradient(90deg, var(--warning), var(--warning-soft)); }
+        .stat-card.absent::before { background: linear-gradient(90deg, var(--danger), var(--danger-soft)); }
+        .stat-card.rate::before { background: linear-gradient(90deg, var(--accent-deep), var(--accent-2)); }
+        .stat-card.leave::before { background: linear-gradient(90deg, var(--info), var(--info-soft)); }
+        .stat-card.working::before { background: linear-gradient(90deg, var(--el), #f7c08e); }
+        .stat-label {
+            font-size: 0.7rem; color: var(--text-muted); text-transform: uppercase;
+            letter-spacing: 0.5px; margin-bottom: 4px;
+        }
+        .stat-value { font-size: 1.6rem; font-weight: 700; margin-bottom: 2px; }
+        .stat-card.present .stat-value { background: linear-gradient(90deg, var(--success), var(--success-soft)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        .stat-card.late .stat-value { background: linear-gradient(90deg, var(--warning), var(--warning-soft)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        .stat-card.absent .stat-value { background: linear-gradient(90deg, var(--danger), var(--danger-soft)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        .stat-card.rate .stat-value { background: linear-gradient(90deg, var(--accent-deep), var(--accent)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        .stat-card.leave .stat-value { background: linear-gradient(90deg, var(--info), var(--info-soft)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        .stat-card.working .stat-value { background: linear-gradient(90deg, #a8511f, var(--el)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        .stat-sub { font-size: 0.7rem; color: var(--text-muted); }
+        .progress-bar {
+            height: 4px; background: var(--accent-pale); border-radius: 2px;
+            overflow: hidden; margin-top: 6px;
+        }
+        .progress-fill { height: 100%; border-radius: 2px; transition: width 0.5s ease; }
+        .charts-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px; }
+        .chart-card {
+            background: linear-gradient(160deg, var(--card) 0%, var(--card-2) 100%);
+            border-radius: 12px; padding: 16px; border: 1px solid var(--border);
+            box-shadow: 0 2px 12px rgba(46,155,230,0.06);
+        }
+        .chart-card h3 {
+            font-size: 0.95rem; margin-bottom: 10px; color: var(--text);
+            display: flex; align-items: center; gap: 6px;
+        }
+        .chart-card h3 .icon {
+            width: 26px; height: 26px; border-radius: 6px; display: flex;
+            align-items: center; justify-content: center; font-size: 0.85rem;
+        }
+        .chart-wrapper { position: relative; height: 220px; }
+        .full-width { grid-column: 1 / -1; }
+        .calendar-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; margin-top: 10px; }
+        .cal-header {
+            text-align: center; font-size: 0.65rem; color: var(--text-muted);
+            padding: 4px 2px; font-weight: 600; text-transform: uppercase;
+        }
+        .cal-header.friday { color: var(--text-muted); }
+        .cal-day {
+            height: 56px; border-radius: 6px; display: flex; flex-direction: column;
+            align-items: center; justify-content: center; font-size: 0.7rem;
+            cursor: pointer; transition: all 0.15s; border: 1px solid transparent;
+            position: relative; min-height: 36px; user-select: none;
+        }
+        .cal-day:hover { transform: scale(1.1); z-index: 10; box-shadow: 0 4px 12px rgba(46,155,230,0.25); }
+        .cal-day .day-num { font-weight: 700; font-size: 0.8rem; }
+        .cal-day .day-status { font-size: 0.5rem; margin-top: 1px; opacity: 0.7; }
+        .cal-day.present { background: linear-gradient(160deg, var(--success-pale), #d3f2e2); border-color: #bce8d1; color: var(--success); }
+        .cal-day.late { background: linear-gradient(160deg, var(--warning-pale), #fae7c4); border-color: #f3dca3; color: var(--warning); }
+        .cal-day.absent { background: linear-gradient(160deg, var(--danger-pale), #f9d5d1); border-color: #f2c0ba; color: var(--danger); }
+        .cal-day.friday {
+            background: linear-gradient(160deg, var(--friday), #e4ecf4); border-color: #dbe6f0; color: var(--text-muted);
+            cursor: default; opacity: 0.75;
+        }
+        .cal-day.friday:hover { transform: none; box-shadow: none; }
+        .cal-day.friday .day-num { opacity: 0.6; }
+        .cal-day.empty { background: transparent; cursor: default; }
+        .cal-day.empty:hover { transform: none; box-shadow: none; }
+        .cal-day.blank { background: linear-gradient(160deg, #ffffff, var(--card-2)); border-color: var(--border); color: var(--text-muted); cursor: pointer; border-style: dashed; }
+        .cal-day.blank:hover { background: var(--accent-pale); border-color: var(--accent); border-style: solid; }
+        .cal-day .leave-badge {
+            position: absolute; bottom: 1px; right: 1px; font-size: 0.45rem;
+            padding: 0px 2px; border-radius: 2px; font-weight: 700; line-height: 1.2;
+        }
+        .leave-badge.el { background: var(--el-text); color: white; }
+        .leave-badge.cl { background: var(--cl-text); color: white; }
+        .leave-badge.sl { background: var(--sl-text); color: white; }
+        .leave-badge.lwp { background: var(--lwp); color: white; }
+        .month-tabs { display: flex; gap: 4px; margin-bottom: 10px; flex-wrap: wrap; }
+        .month-tab {
+            padding: 5px 12px; border-radius: 6px; border: 1px solid var(--border);
+            background: var(--card); color: var(--text-muted); cursor: pointer;
+            transition: all 0.2s; font-size: 0.8rem; font-weight: 500; user-select: none;
+        }
+        .month-tab:hover { background: var(--card-hover); }
+        .month-tab.active { background: linear-gradient(90deg, #186399, var(--accent-deep)); color: #ffffff; border-color: var(--accent-deep); font-weight: 700; }
+        .legend { display: flex; gap: 12px; margin-top: 10px; flex-wrap: wrap; justify-content: center; }
+        .legend-item { display: flex; align-items: center; gap: 4px; font-size: 0.7rem; color: var(--text-muted); }
+        .legend-dot { width: 8px; height: 8px; border-radius: 2px; }
+        .tooltip {
+            position: fixed; background: #ffffff; border: 1px solid var(--border);
+            border-radius: 6px; padding: 6px 10px; font-size: 0.8rem; pointer-events: none;
+            z-index: 1000; display: none; box-shadow: 0 4px 20px rgba(28,111,176,0.2); color: var(--text);
+        }
+        .month-detail { display: grid; grid-template-columns: repeat(8, 1fr); gap: 8px; margin-top: 12px; }
+        .detail-item { background: var(--card-2); border: 1px solid var(--border); border-radius: 6px; padding: 8px 4px; text-align: center; }
+        .detail-item .label { font-size: 0.6rem; color: var(--text-muted); margin-bottom: 2px; text-transform: uppercase; }
+        .detail-item .value { font-size: 1rem; font-weight: 700; }
+        .friday-note {
+            text-align: center; font-size: 0.7rem; color: var(--text-muted);
+            margin-top: 6px; padding: 4px 8px; background: var(--accent-pale);
+            border-radius: 6px; display: inline-block;
+        }
+        .modal-overlay {
+            position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+            background: var(--overlay); display: none; align-items: center; justify-content: center;
+            z-index: 2000; backdrop-filter: blur(4px);
+        }
+        .modal-overlay.show { display: flex; }
+        .modal {
+            background: linear-gradient(160deg, #ffffff, var(--card-2)); border-radius: 16px; padding: 24px;
+            border: 1px solid var(--border); width: 340px; max-width: 90vw;
+            box-shadow: 0 20px 60px rgba(28,111,176,0.25); animation: modalIn 0.2s ease;
+        }
+        @keyframes modalIn {
+            from { opacity: 0; transform: scale(0.95) translateY(10px); }
+            to { opacity: 1; transform: scale(1) translateY(0); }
+        }
+        .modal h2 { font-size: 1.1rem; margin-bottom: 4px; color: var(--text); }
+        .modal .modal-date { font-size: 0.85rem; color: var(--text-muted); margin-bottom: 20px; }
+        .modal-options { display: flex; flex-direction: column; gap: 8px; margin-bottom: 20px; }
+        .modal-option {
+            display: flex; align-items: center; gap: 12px; padding: 12px 16px;
+            border-radius: 10px; border: 1px solid var(--border); background: #ffffff;
+            cursor: pointer; transition: all 0.2s; font-size: 0.95rem;
+        }
+        .modal-option:hover { background: var(--accent-pale); border-color: var(--accent); }
+        .modal-option .option-dot { width: 16px; height: 16px; border-radius: 50%; border: 2px solid transparent; transition: all 0.2s; }
+        .modal-option.ontime .option-dot { background: linear-gradient(135deg, var(--success), var(--success-soft)); }
+        .modal-option.late .option-dot { background: linear-gradient(135deg, var(--warning), var(--warning-soft)); }
+        .modal-option.absent .option-dot { background: linear-gradient(135deg, var(--danger), var(--danger-soft)); }
+        .modal-option.blank .option-dot { background: var(--text-muted); }
+        .modal-option.selected { border-color: var(--accent); background: var(--accent-pale); }
+        .modal-option.selected .option-dot { box-shadow: 0 0 0 3px rgba(46,155,230,0.3); }
+        .modal-option .option-info {
+            margin-left: auto; font-size: 0.75rem; color: var(--text-muted);
+        }
+        .modal-option .option-bar {
+            width: 100%; height: 4px; background: var(--accent-pale); border-radius: 2px;
+            margin-top: 6px; overflow: hidden;
+        }
+        .modal-option .option-bar-fill {
+            height: 100%; border-radius: 2px; transition: width 0.3s;
+        }
+        .modal-option .option-remaining {
+            font-size: 0.7rem; color: var(--text-muted); margin-top: 2px;
+        }
+        .modal-option.disabled {
+            opacity: 0.4; cursor: not-allowed; pointer-events: none;
+        }
+        .modal-actions { display: flex; gap: 8px; }
+        .modal-btn { flex: 1; padding: 10px; border-radius: 8px; border: 1px solid var(--border);
+            background: #ffffff; color: var(--text); font-size: 0.9rem; cursor: pointer;
+            transition: all 0.2s; font-weight: 500;
+        }
+        .modal-btn:hover { background: var(--card-hover); }
+        .modal-btn.primary { background: linear-gradient(90deg, var(--accent-deep), var(--accent)); color: #ffffff; border-color: var(--accent-deep); }
+        .modal-btn.primary:hover { background: linear-gradient(90deg, #186399, var(--accent-deep)); }
+        .modal-btn.back { background: var(--card-2); color: var(--text-muted); }
+        .modal-btn.back:hover { background: var(--accent-pale); }
+
+        /* ---------------- HEADER ACTIONS + RESET ---------------- */
+        .header-actions { display: flex; align-items: stretch; justify-content: center; gap: 10px; flex-wrap: wrap; margin-top: 10px; }
+        .reset-btn {
+            display: inline-flex; align-items: center; gap: 7px; padding: 0 16px;
+            border-radius: 999px; border: 1px solid var(--border); background: #ffffff;
+            color: var(--danger); font-family: inherit; font-size: 0.85rem; font-weight: 600;
+            cursor: pointer; box-shadow: 0 2px 10px rgba(46,155,230,0.10);
+            transition: background 0.15s, border-color 0.15s, box-shadow 0.15s, transform 0.1s;
+        }
+        .reset-btn svg { width: 14px; height: 14px; flex-shrink: 0; transition: transform 0.35s ease; }
+        .reset-btn:hover:not(:disabled) { background: linear-gradient(90deg, var(--danger-pale), #ffffff); border-color: var(--danger-soft); box-shadow: 0 2px 12px rgba(185,61,49,0.16); }
+        .reset-btn:hover:not(:disabled) svg { transform: rotate(-120deg); }
+        .reset-btn:active:not(:disabled) { transform: scale(0.96); }
+        .reset-btn:focus-visible { outline: 2px solid var(--danger-soft); outline-offset: 2px; }
+        .reset-btn:disabled { color: var(--text-muted); opacity: 0.55; cursor: default; box-shadow: none; }
+
+        .reset-modal { text-align: center; width: 360px; }
+        .reset-icon {
+            width: 46px; height: 46px; border-radius: 50%; margin: 0 auto 12px;
+            display: flex; align-items: center; justify-content: center; color: var(--danger);
+            background: linear-gradient(135deg, var(--danger-pale), #f9d5d1); border: 1px solid #f2c0ba;
+        }
+        .reset-icon svg { width: 22px; height: 22px; }
+        .reset-text { font-size: 0.85rem; color: #55657c; line-height: 1.5; margin: 6px 0 16px; }
+        .reset-summary { display: flex; gap: 10px; margin-bottom: 20px; }
+        .reset-chip { flex: 1; background: var(--card-2); border: 1px solid var(--border); border-radius: 10px; padding: 10px 6px; }
+        .reset-chip strong { display: block; font-size: 1.35rem; color: var(--text); line-height: 1.2; }
+        .reset-chip span { font-size: 0.65rem; color: #55657c; text-transform: uppercase; letter-spacing: 0.5px; }
+        .modal-btn.danger { background: linear-gradient(90deg, #a3322a, var(--danger)); color: #ffffff; border-color: #a3322a; }
+        .modal-btn.danger:hover { background: linear-gradient(90deg, #8f2b24, #a3322a); }
+        .modal-btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+        .modal-btn.danger:focus-visible { outline-color: var(--danger-soft); }
+
+        /* ---------------- FEATURES: toolbar, selection, toast, backup ---------------- */
+        [hidden] { display: none !important; }
+        .cal-toolbar { display: flex; flex-wrap: wrap; gap: 8px; margin: 2px 0 10px; }
+        .tool-btn {
+            display: inline-flex; align-items: center; gap: 6px; height: 32px; padding: 0 13px;
+            border-radius: 999px; border: 1px solid var(--border); background: #ffffff; color: var(--accent-deep);
+            font-family: inherit; font-size: 0.78rem; font-weight: 600; cursor: pointer;
+            transition: background 0.15s, border-color 0.15s, color 0.15s, transform 0.1s;
+        }
+        .tool-btn svg { width: 14px; height: 14px; flex-shrink: 0; }
+        .tool-btn:hover:not(:disabled) { background: var(--accent-pale); border-color: var(--accent); color: #186399; }
+        .tool-btn:active:not(:disabled) { transform: scale(0.96); }
+        .tool-btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+        .tool-btn:disabled { color: var(--text-muted); opacity: 0.6; cursor: default; }
+        .tool-btn.primary { background: linear-gradient(90deg, #186399, var(--accent-deep)); color: #ffffff; border-color: #186399; }
+        .tool-btn.primary:hover:not(:disabled) { background: linear-gradient(90deg, #12507d, #186399); border-color: #12507d; color: #ffffff; }
+        .tool-btn.primary:disabled { background: #ffffff; color: var(--text-muted); border-color: var(--border); opacity: 1; }
+        .tool-btn.toggle.active { background: var(--accent-pale); border-color: var(--accent-deep); color: #12507d; }
+        .tool-btn.ghost { color: var(--text-muted); }
+
+        .selection-bar {
+            display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px 14px;
+            margin: 0 0 10px; padding: 8px 10px; border-radius: 10px;
+            background: linear-gradient(90deg, var(--accent-pale), #ffffff); border: 1px solid var(--border);
+        }
+        .sel-info { font-size: 0.82rem; color: var(--text); }
+        .sel-info strong { font-weight: 700; }
+        .sel-span { color: #55657c; margin-left: 6px; }
+        .sel-note { color: #55657c; font-size: 0.74rem; margin-left: 8px; }
+        .sel-hint { color: #55657c; }
+        .sel-actions { display: flex; flex-wrap: wrap; gap: 6px; }
+
+        .cal-day.today { box-shadow: 0 0 0 2px var(--accent-deep); }
+        .cal-day.today:hover { box-shadow: 0 0 0 2px var(--accent-deep), 0 4px 12px rgba(46,155,230,0.25); }
+        .cal-day.selected { box-shadow: inset 0 0 0 2px var(--accent-deep), inset 0 0 0 60px rgba(46,155,230,0.16); }
+        .cal-day.selected::after { content: '\2713'; position: absolute; top: 3px; right: 6px; font-size: 0.7rem; font-weight: 800; color: var(--accent-deep); }
+        .cal-day.today.selected { box-shadow: 0 0 0 2px var(--accent-deep), inset 0 0 0 2px var(--accent-deep), inset 0 0 0 60px rgba(46,155,230,0.16); }
+
+        .toast {
+            position: fixed; left: 50%; bottom: 24px; transform: translate(-50%, 16px); opacity: 0; pointer-events: none;
+            display: flex; align-items: center; gap: 12px; padding: 10px 12px 10px 16px;
+            background: var(--text); color: #ffffff; border-radius: 12px; font-size: 0.85rem;
+            box-shadow: 0 10px 30px rgba(28,111,176,0.35); z-index: 3000; max-width: calc(100vw - 24px);
+            transition: opacity 0.2s, transform 0.2s;
+        }
+        .toast.show { opacity: 1; transform: translate(-50%, 0); pointer-events: auto; }
+        .toast button { background: none; border: none; color: #9fd4f8; font: inherit; font-weight: 700; cursor: pointer; padding: 4px 8px; border-radius: 6px; }
+        .toast button:hover { background: rgba(255,255,255,0.12); }
+        .toast button:focus-visible { outline: 2px solid #9fd4f8; outline-offset: 1px; }
+
+        .backup-btn { color: var(--accent-deep); }
+        .backup-btn:hover:not(:disabled) { background: linear-gradient(90deg, var(--accent-pale), #ffffff); border-color: var(--accent); color: #186399; box-shadow: 0 2px 12px rgba(46,155,230,0.2); }
+        .backup-btn:focus-visible { outline-color: var(--accent); }
+        .save-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+        .save-dot.ok { background: linear-gradient(135deg, var(--success), var(--success-soft)); }
+        .save-dot.warn { background: linear-gradient(135deg, var(--warning), var(--warning-soft)); }
+        .backup-modal { width: 400px; }
+        .backup-modal h2 { margin-bottom: 6px; }
+        .backup-status { display: flex; align-items: center; gap: 8px; font-size: 0.8rem; color: #55657c; margin: 0 0 16px; line-height: 1.4; }
+        .backup-rows { display: flex; flex-direction: column; gap: 8px; margin-bottom: 16px; }
+        .backup-row {
+            display: flex; align-items: center; gap: 12px; width: 100%; text-align: left; padding: 11px 14px;
+            border-radius: 10px; border: 1px solid var(--border); background: #ffffff; cursor: pointer;
+            font-family: inherit; color: var(--text); transition: background 0.15s, border-color 0.15s;
+        }
+        .backup-row:hover { background: var(--accent-pale); border-color: var(--accent); }
+        .backup-row:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+        .backup-row .br-icon { width: 34px; height: 34px; border-radius: 9px; display: flex; align-items: center; justify-content: center; background: var(--accent-pale); color: var(--accent-deep); flex-shrink: 0; }
+        .backup-row .br-icon svg { width: 18px; height: 18px; }
+        .backup-row strong { display: block; font-size: 0.92rem; font-weight: 600; }
+        .backup-row .br-sub { display: block; font-size: 0.75rem; color: #55657c; margin-top: 1px; }
+        .backup-error { margin: 0 0 14px; padding: 8px 12px; border-radius: 8px; background: var(--danger-pale); border: 1px solid var(--danger-soft); color: var(--danger); font-size: 0.8rem; line-height: 1.4; }
+        .backup-confirm { text-align: center; }
+
+        /* ---------------- ONE-PAGE SECTIONS ---------------- */
+        .section { margin-bottom: 16px; }
+        .card-hint { margin-left: auto; font-size: 0.72rem; font-weight: 400; color: var(--text-muted); }
+        .leave-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 10px; margin-top: 10px; }
+
+        /* ---------------- RESPONSIVE ---------------- */
+        @media (max-width: 1000px) {
+            .stats-grid { grid-template-columns: repeat(3, 1fr); }
+            .charts-row { grid-template-columns: 1fr; }
+            .month-detail { grid-template-columns: repeat(4, 1fr); }
+        }
+        @media (max-width: 860px) {
+            header {
+                flex-direction: column; gap: 10px; padding: 16px; min-height: 0;
+            }
+            header .header-logo {
+                position: static; height: 30px; margin: 0 auto;
+            }
+            .main-area { padding: 14px 12px 28px; }
+        }
+        @media (max-width: 600px) {
+            .stats-grid { grid-template-columns: repeat(2, 1fr); }
+            .month-detail { grid-template-columns: repeat(2, 1fr); }
+            .cal-day { height: 46px; }
+            .card-hint { display: none; }
+            header h1 { font-size: 1.4rem; }
+            header {
+                flex-direction: column; gap: 10px; padding: 16px; min-height: 0;
+            }
+            header .header-logo {
+                position: static; height: 28px; margin: 0 auto;
+            }
+        }
+        /* ---------------- MOBILE OPTIMIZATION (presentation only) ---------------- */
+        @media (max-width: 600px) {
+            .main-area { padding: 10px 10px 24px; }
+            header h1 { font-size: 1.25rem; }
+            header p { font-size: 0.8rem; }
+            .header-actions { gap: 8px; margin-top: 12px; }
+            .reset-btn { padding: 8px 14px; font-size: 0.8rem; min-height: 38px; }
+            .year-switcher select { font-size: 0.9rem; padding: 8px 28px 8px 14px; }
+            .year-nav-btn { width: 36px; height: 36px; }
+
+            /* Stats: 2 columns, tighter cards */
+            .stat-card { padding: 12px 8px; }
+            .stat-value { font-size: 1.35rem; }
+            .stat-label, .stat-sub { font-size: 0.62rem; }
+
+            /* Charts: taller enough to read, tighter padding */
+            .chart-card { padding: 12px; }
+            .chart-card h3 { font-size: 0.85rem; }
+            .chart-wrapper { height: 190px; }
+
+            /* Month tabs: single scrollable row, no wrapping into 3 rows */
+            .month-tabs {
+                flex-wrap: nowrap; overflow-x: auto; gap: 6px;
+                padding: 2px 2px 6px; margin-bottom: 10px;
+                -webkit-overflow-scrolling: touch; touch-action: pan-x pan-y;
+                scrollbar-width: none;
+            }
+            .month-tabs::-webkit-scrollbar { display: none; }
+            .month-tab { flex: 0 0 auto; padding: 8px 14px; font-size: 0.8rem; scroll-margin: 8px; }
+
+            /* Toolbar: comfortable touch targets, wrap cleanly */
+            .cal-toolbar { gap: 6px; }
+            .tool-btn { height: 38px; padding: 0 12px; font-size: 0.76rem; }
+
+            /* Selection bar: stack actions under the info */
+            .selection-bar { flex-direction: column; align-items: stretch; gap: 8px; }
+            .sel-actions { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }
+            .sel-actions .tool-btn { justify-content: center; padding: 0 8px; }
+            .sel-hint { display: block; margin-top: 4px; }
+
+            /* Calendar: gap scales down, day cells stay tappable */
+            .calendar-grid { gap: 3px; }
+            .cal-day { height: 44px; font-size: 0.65rem; border-radius: 5px; }
+            .cal-day .day-num { font-size: 0.75rem; }
+            .cal-day .leave-badge { font-size: 0.42rem; }
+            .cal-header { font-size: 0.58rem; }
+
+            .legend { gap: 8px; }
+            .legend-item { font-size: 0.65rem; }
+            .friday-note { font-size: 0.65rem; }
+
+            /* Month detail: 4 across fits small screens better */
+            .month-detail { grid-template-columns: repeat(4, 1fr); gap: 6px; }
+            .detail-item { padding: 6px 2px; }
+            .detail-item .value { font-size: 0.85rem; }
+            .detail-item .label { font-size: 0.52rem; }
+
+            /* Leave balance: 2x2 grid */
+            .leave-grid { grid-template-columns: repeat(2, 1fr) !important; gap: 8px; }
+
+            /* Modals: near full-width sheets, thumb-friendly options */
+            .modal { width: 100%; max-width: calc(100vw - 24px); padding: 18px; border-radius: 14px; }
+            .modal-option { padding: 14px 14px; font-size: 0.9rem; }
+            .modal-btn { padding: 12px; font-size: 0.88rem; }
+            .backup-row { padding: 13px 12px; }
+
+            /* Toast: full width, above home indicator */
+            .toast {
+                left: 12px; right: 12px; bottom: calc(12px + env(safe-area-inset-bottom, 0px));
+                transform: translateY(16px); max-width: none; justify-content: space-between;
+            }
+            .toast.show { transform: translateY(0); }
+
+            /* Respect notches */
+            body { padding-left: env(safe-area-inset-left, 0px); padding-right: env(safe-area-inset-right, 0px); }
+        }
+        @media (max-width: 360px) {
+            .stats-grid { gap: 8px; }
+            .stat-value { font-size: 1.2rem; }
+            .cal-day { height: 40px; }
+            .month-detail { grid-template-columns: repeat(2, 1fr); }
+        }
+        /* Larger touch targets on any touch device */
+        @media (pointer: coarse) {
+            .cal-day { min-height: 44px; }
+            .tool-btn { min-height: 38px; }
+            .month-tab { min-height: 38px; display: inline-flex; align-items: center; }
+            .year-nav-btn { min-width: 36px; min-height: 36px; }
+            .modal-option { min-height: 48px; }
+            .backup-row { min-height: 52px; }
+            .cal-day:hover { transform: none; box-shadow: none; }
+            .stat-card:hover { transform: none; }
+        }
+        .fade-in { animation: fadeIn 0.5s ease forwards; opacity: 0; }
+        @keyframes fadeIn { to { opacity: 1; } }
+    </style>
+<base target="_blank">
+</head>
+<body>
+
+    <div class="main-area">
+        <div class="container">
+            <header class="fade-in">
+                <img class="header-logo" src="data:image/png;base64,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" alt="Young One logo">
+                <div class="header-text">
+                    <h1>Attendance Dashboard</h1>
+                    <p>Full Year <span id="yearLabel">2026</span> | No office on Fridays | Sat &amp; Sun are working days | Click any date to edit</p>
+                    <div class="header-actions">
+                    <div class="year-switcher">
+                        <button class="year-nav-btn" id="yearPrevBtn" title="Previous year">&#8249;</button>
+                        <select id="yearSelect" title="Select year"></select>
+                        <button class="year-nav-btn" id="yearNextBtn" title="Next year">&#8250;</button>
+                    </div>
+                    <button class="reset-btn" id="resetBtn" type="button" title="Clear all attendance for this year">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>
+                        <span>Reset</span>
+                    </button>
+                    <button class="reset-btn backup-btn" id="backupBtn" type="button" title="Backup &amp; data">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="m7 10 5 5 5-5"/><path d="M12 15V3"/></svg>
+                        <span>Backup</span><span class="save-dot ok" id="saveDot" aria-hidden="true"></span>
+                    </button>
+                    </div>
+                    <div id="noDataBanner" style="display:none; margin-top:10px; padding:8px 14px; background:var(--danger-pale); border:1px solid var(--danger-soft); border-radius:8px; font-size:0.8rem; color:var(--danger);">
+                        ⚠ No attendance records exist for <span id="noDataYear">this year</span> yet. Stats and charts below are blank until entries are added by clicking dates in the calendar below.
+                    </div>
+                </div>
+            </header>
+
+            <!-- ---------- STATS ---------- -->
+            <div class="stats-grid" id="statsGrid">
+                    <div class="stat-card present"><div class="stat-label">Present</div><div class="stat-value" id="valPresent">0</div><div class="stat-sub">On Time</div></div>
+                    <div class="stat-card late"><div class="stat-label">Late</div><div class="stat-value" id="valLate">0</div><div class="stat-sub">Late Arrivals</div></div>
+                    <div class="stat-card absent"><div class="stat-label">Absent</div><div class="stat-value" id="valAbsent">0</div><div class="stat-sub">Days Absent</div></div>
+                    <div class="stat-card rate"><div class="stat-label">Rate</div><div class="stat-value" id="valRate">0%</div><div class="progress-bar"><div class="progress-fill" id="barRate" style="width:0%;background:linear-gradient(90deg,var(--accent-deep),var(--accent));"></div></div></div>
+                    <div class="stat-card leave"><div class="stat-label">Leave</div><div class="stat-value" id="valLeave">0</div><div class="stat-sub" id="subLeave">EL:0 CL:0 SL:0</div></div>
+                    <div class="stat-card working"><div class="stat-label">Working</div><div class="stat-value" id="valWorking">0</div><div class="stat-sub">Days (Mon-Thu, Sat-Sun)</div></div>
+                </div>
+
+            <!-- ---------- CHARTS ---------- -->
+            <div class="charts-row">
+                <div class="chart-card"><h3><span class="icon" style="background:var(--accent-pale);color:var(--accent-deep);">📊</span> Monthly Trends</h3><div class="chart-wrapper"><canvas id="trendChartCanvas"></canvas></div></div>
+                <div class="chart-card"><h3><span class="icon" style="background:#fbe4ee;color:var(--sl-text);">📋</span> Leave Breakdown by Month</h3><div class="chart-wrapper"><canvas id="leaveBreakdownChartCanvas"></canvas></div></div>
+            </div>
+
+            <!-- ---------- CALENDAR ---------- -->
+            <section id="calendar">
+                <div class="chart-card full-width section">
+                    <h3><span class="icon" style="background:var(--accent-pale);color:var(--accent-deep);">📅</span> Attendance Calendar <span class="card-hint">Click a date to edit &middot; Shift-click or drag to select several</span></h3>
+                    <div class="month-tabs">
+                        <div class="month-tab" data-month="January">Jan</div>
+                        <div class="month-tab" data-month="February">Feb</div>
+                        <div class="month-tab" data-month="March">Mar</div>
+                        <div class="month-tab" data-month="April">Apr</div>
+                        <div class="month-tab" data-month="May">May</div>
+                        <div class="month-tab" data-month="June">Jun</div>
+                        <div class="month-tab" data-month="July">Jul</div>
+                        <div class="month-tab" data-month="August">Aug</div>
+                        <div class="month-tab" data-month="September">Sep</div>
+                        <div class="month-tab" data-month="October">Oct</div>
+                        <div class="month-tab" data-month="November">Nov</div>
+                        <div class="month-tab" data-month="December">Dec</div>
+                    </div>
+                    <div class="cal-toolbar">
+                        <button class="tool-btn" id="todayJumpBtn" type="button" title="Jump to today's month">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 2v4"/><path d="M16 2v4"/><rect width="18" height="18" x="3" y="4" rx="2"/><path d="M3 10h18"/></svg>
+                            <span>Today</span>
+                        </button>
+                        <button class="tool-btn primary" id="markTodayBtn" type="button">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>
+                            <span id="markTodayLabel">Mark today On Time</span>
+                        </button>
+                        <button class="tool-btn" id="fillBlanksBtn" type="button">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m3 17 2 2 4-4"/><path d="m3 7 2 2 4-4"/><path d="M13 6h8"/><path d="M13 12h8"/><path d="M13 18h8"/></svg>
+                            <span id="fillBlanksLabel">Fill blanks</span>
+                        </button>
+                        <button class="tool-btn toggle" id="selectModeBtn" type="button" aria-pressed="false" title="Select several days to mark them together">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect width="18" height="18" x="3" y="3" rx="2"/><path d="m9 12 2 2 4-4"/></svg>
+                            <span>Select days</span>
+                        </button>
+                    </div>
+                    <div class="selection-bar" id="selectionBar" hidden>
+                        <div class="sel-info">
+                            <strong id="selCount"></strong><span class="sel-span" id="selSpan"></span><span class="sel-note" id="selNote"></span>
+                            <span class="sel-hint" id="selHint">Click days, drag across them, or shift-click to select a range.</span>
+                        </div>
+                        <div class="sel-actions">
+                            <button class="tool-btn" id="selOnTime" type="button">On Time</button>
+                            <button class="tool-btn" id="selLate" type="button">Late</button>
+                            <button class="tool-btn" id="selAbsent" type="button">Absent&hellip;</button>
+                            <button class="tool-btn" id="selBlank" type="button">Blank</button>
+                            <button class="tool-btn ghost" id="selClear" type="button">Clear</button>
+                        </div>
+                    </div>
+                    <div id="calendarContainer"></div>
+                    <div style="text-align:center;"><span class="friday-note">🚫 Fridays only are non-working days — Sat &amp; Sun are working days</span></div>
+                    <div class="legend">
+                        <div class="legend-item"><div class="legend-dot" style="background:var(--success);"></div> On Time</div>
+                        <div class="legend-item"><div class="legend-dot" style="background:var(--warning);"></div> Late</div>
+                        <div class="legend-item"><div class="legend-dot" style="background:var(--danger);"></div> Absent</div>
+                        <div class="legend-item"><div class="legend-dot" style="background:var(--el-text);"></div> EL</div>
+                        <div class="legend-item"><div class="legend-dot" style="background:var(--cl-text);"></div> CL</div>
+                        <div class="legend-item"><div class="legend-dot" style="background:var(--sl-text);"></div> SL</div>
+                        <div class="legend-item"><div class="legend-dot" style="background:var(--lwp);"></div> LWP</div>
+                        <div class="legend-item"><div class="legend-dot" style="background:#ffffff;border:1.5px dashed var(--accent);"></div> Blank</div>
+                        <div class="legend-item"><div class="legend-dot" style="background:#ffffff;border:1.5px solid var(--text-muted);opacity:0.6;"></div> Friday</div>
+                    </div>
+                    <div id="monthDetail" class="month-detail" style="margin-top:12px;"></div>
+                </div>
+
+            </section>
+
+            <!-- ---------- LEAVE BALANCE ---------- -->
+            <section id="leave">
+                <div class="chart-card section" id="leaveBalanceCard">
+                        <h3><span class="icon" style="background:var(--info-pale);color:var(--info);">💳</span> Leave Balance Summary</h3>
+                        <div class="leave-grid">
+                            <div style="background: linear-gradient(160deg, #fef2e9, #fce3cc); border: 1px solid #f6cda3; border-radius: 10px; padding: 12px; text-align: center;">
+                                <div style="font-size: 0.65rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px;">EL Remaining</div>
+                                <div id="elRemainingVal" style="font-size: 1.8rem; font-weight: 700; color: var(--el-text);">0</div>
+                                <div style="font-size: 0.65rem; color: var(--text-muted); margin-top: 2px;">of 16 yearly</div>
+                                <div class="progress-bar" style="margin-top: 6px;"><div id="elRemainingBar" class="progress-fill" style="width:0%;background:linear-gradient(90deg,var(--el-text),var(--el));"></div></div>
+                            </div>
+                            <div style="background: linear-gradient(160deg, #e9f8fa, #cdedf2); border: 1px solid #a3dce6; border-radius: 10px; padding: 12px; text-align: center;">
+                                <div style="font-size: 0.65rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px;">CL Remaining</div>
+                                <div id="clRemainingVal" style="font-size: 1.8rem; font-weight: 700; color: var(--cl-text);">0</div>
+                                <div style="font-size: 0.65rem; color: var(--text-muted); margin-top: 2px;">of 10 yearly</div>
+                                <div class="progress-bar" style="margin-top: 6px;"><div id="clRemainingBar" class="progress-fill" style="width:0%;background:linear-gradient(90deg,var(--cl-text),var(--cl));"></div></div>
+                            </div>
+                            <div style="background: linear-gradient(160deg, #fcedf3, #f8d3e2); border: 1px solid #f0aecb; border-radius: 10px; padding: 12px; text-align: center;">
+                                <div style="font-size: 0.65rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px;">SL Remaining</div>
+                                <div id="slRemainingVal" style="font-size: 1.8rem; font-weight: 700; color: var(--sl-text);">0</div>
+                                <div style="font-size: 0.65rem; color: var(--text-muted); margin-top: 2px;">of 14 yearly</div>
+                                <div class="progress-bar" style="margin-top: 6px;"><div id="slRemainingBar" class="progress-fill" style="width:0%;background:linear-gradient(90deg,var(--sl-text),var(--sl));"></div></div>
+                            </div>
+                            <div style="background: linear-gradient(160deg, #f3f5f8, #e2e8f0); border: 1px solid #cbd8e4; border-radius: 10px; padding: 12px; text-align: center;">
+                                <div style="font-size: 0.65rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px;">LWP Used</div>
+                                <div id="lwpUsedVal" style="font-size: 1.8rem; font-weight: 700; color: var(--text);">0</div>
+                                <div style="font-size: 0.65rem; color: var(--text-muted); margin-top: 2px;">without pay</div>
+                                <div class="progress-bar" style="margin-top: 6px;"><div id="lwpUsedBar" class="progress-fill" style="width:0%;background:linear-gradient(90deg,var(--text-muted),var(--lwp));"></div></div>
+                            </div>
+                        </div>
+                    </div>
+
+            </section>
+
+        </div>
+    </div>
+
+    <div class="tooltip" id="tooltip"></div>
+
+    <!-- Step 1: Main Edit Modal -->
+    <div class="modal-overlay" id="editModal">
+        <div class="modal">
+            <div class="modal-header"><h2>Edit Attendance</h2><div class="modal-date" id="modalDate">2026-07-18</div></div>
+            <div class="modal-options">
+                <div class="modal-option ontime" data-status="On Time" onclick="selectOption(this)"><div class="option-dot"></div><span>On Time</span></div>
+                <div class="modal-option late" data-status="Late" onclick="selectOption(this)"><div class="option-dot"></div><span>Late</span></div>
+                <div class="modal-option absent" data-status="Absent" onclick="selectOption(this)"><div class="option-dot"></div><span>Absent</span><span class="option-info">Choose leave type →</span></div>
+                <div class="modal-option blank" data-status="Blank" onclick="selectOption(this)"><div class="option-dot"></div><span>Blank — Clear selection</span></div>
+            </div>
+            <div class="modal-actions"><button class="modal-btn" onclick="closeModal()">Cancel</button><button class="modal-btn primary" onclick="saveStatus()">Save</button></div>
+        </div>
+    </div>
+
+    <!-- Step 2: Leave Type Modal -->
+    <div class="modal-overlay" id="leaveModal">
+        <div class="modal">
+            <div class="modal-header"><h2>Select Leave Type</h2><div class="modal-date" id="leaveModalDate">2026-07-18</div></div>
+            <div class="modal-options" id="leaveOptions">
+                <div class="modal-option" data-leave="EL" onclick="selectLeaveType(this)">
+                    <div class="option-dot" style="background:var(--el);"></div>
+                    <div style="flex:1">
+                        <div>EL — Earned Leave</div>
+                        <div class="option-bar"><div class="option-bar-fill" id="elBar" style="width:0%;background:var(--el);"></div></div>
+                        <div class="option-remaining" id="elRemaining">0 / 16 used</div>
+                    </div>
+                </div>
+                <div class="modal-option" data-leave="CL" onclick="selectLeaveType(this)">
+                    <div class="option-dot" style="background:var(--cl);"></div>
+                    <div style="flex:1">
+                        <div>CL — Casual Leave</div>
+                        <div class="option-bar"><div class="option-bar-fill" id="clBar" style="width:0%;background:var(--cl);"></div></div>
+                        <div class="option-remaining" id="clRemaining">0 / 10 used</div>
+                    </div>
+                </div>
+                <div class="modal-option" data-leave="SL" onclick="selectLeaveType(this)">
+                    <div class="option-dot" style="background:var(--sl);"></div>
+                    <div style="flex:1">
+                        <div>SL — Sick Leave</div>
+                        <div class="option-bar"><div class="option-bar-fill" id="slBar" style="width:0%;background:var(--sl);"></div></div>
+                        <div class="option-remaining" id="slRemaining">0 / 14 used</div>
+                    </div>
+                </div>
+                <div class="modal-option" data-leave="LWP" onclick="selectLeaveType(this)">
+                    <div class="option-dot" style="background:var(--lwp);"></div>
+                    <div style="flex:1">
+                        <div>LWP — Leave Without Pay</div>
+                        <div class="option-remaining" style="margin-top:4px;">Used when EL &amp; CL are exhausted</div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-actions"><button class="modal-btn back" onclick="backToMain()">← Back</button><button class="modal-btn primary" onclick="saveLeaveType()">Save</button></div>
+        </div>
+    </div>
+
+    <!-- Reset confirmation -->
+    <div class="modal-overlay" id="resetModal" role="dialog" aria-modal="true" aria-labelledby="resetTitle">
+        <div class="modal reset-modal">
+            <div class="reset-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3"/><path d="M12 9v4"/><path d="M12 17h.01"/></svg></div>
+            <h2 id="resetTitle">Reset <span id="resetYear">2026</span> attendance?</h2>
+            <p class="reset-text">Every marked day and leave entry for this year will be cleared back to blank. This can't be undone.</p>
+            <div class="reset-summary">
+                <div class="reset-chip"><strong id="resetMarked">0</strong><span>Marked days</span></div>
+                <div class="reset-chip"><strong id="resetLeave">0</strong><span>Leave days</span></div>
+            </div>
+            <div class="modal-actions"><button class="modal-btn" id="resetCancelBtn" type="button" onclick="closeModal()">Cancel</button><button class="modal-btn danger" id="resetConfirmBtn" type="button" onclick="confirmReset()">Reset all</button></div>
+        </div>
+    </div>
+
+    <!-- Toast (confirmations + Undo) -->
+    <div class="toast" id="toast" role="status" aria-live="polite"><span id="toastMsg"></span><button type="button" id="toastUndo" hidden>Undo</button></div>
+
+    <!-- Backup & data -->
+    <div class="modal-overlay" id="backupModal" role="dialog" aria-modal="true" aria-labelledby="backupTitle">
+        <div class="modal backup-modal">
+            <div id="backupMain">
+                <h2 id="backupTitle">Backup &amp; data</h2>
+                <p class="backup-status"><span class="save-dot ok" id="saveDotModal" aria-hidden="true"></span><span id="backupStatus">Auto-saved in this browser</span></p>
+                <div class="backup-rows" id="backupRows">
+                    <button class="backup-row" id="exportBtn" type="button">
+                        <span class="br-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="m7 10 5 5 5-5"/><path d="M12 15V3"/></svg></span>
+                        <span><strong>Export backup</strong><span class="br-sub">Download everything as a .json file</span></span>
+                    </button>
+                    <button class="backup-row" id="importBtn" type="button">
+                        <span class="br-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="m17 8-5-5-5 5"/><path d="M12 3v12"/></svg></span>
+                        <span><strong>Import backup</strong><span class="br-sub">Replace all data with a backup file</span></span>
+                    </button>
+                    <button class="backup-row" id="restoreBtn" type="button">
+                        <span class="br-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg></span>
+                        <span><strong>Restore sample data</strong><span class="br-sub">Go back to the original sample data</span></span>
+                    </button>
+                </div>
+                <input type="file" id="importFile" accept=".json,application/json" hidden>
+                <div class="backup-error" id="backupError" role="alert" hidden></div>
+                <div class="modal-actions"><button class="modal-btn" type="button" onclick="closeModal()">Close</button></div>
+            </div>
+            <div class="backup-confirm" id="backupConfirm" hidden>
+                <div class="reset-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3"/><path d="M12 9v4"/><path d="M12 17h.01"/></svg></div>
+                <h2 id="bcTitle"></h2>
+                <p class="reset-text" id="bcText"></p>
+                <div class="reset-summary">
+                    <div class="reset-chip"><strong id="bcMarked">0</strong><span>Marked days</span></div>
+                    <div class="reset-chip"><strong id="bcLeave">0</strong><span>Leave days</span></div>
+                </div>
+                <div class="modal-actions"><button class="modal-btn" id="bcCancel" type="button">Cancel</button><button class="modal-btn danger" id="bcOk" type="button">Replace</button></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const monthNames = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+        const weekdayNames = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+
+        // Yearly limits
+        const YEARLY_LIMITS = { EL: 16, CL: 10, SL: 14 };
+
+        // ---- Year handling ----------------------------------------------------
+        function isLeapYear(y) { return (y % 4 === 0 && y % 100 !== 0) || (y % 400 === 0); }
+        function getDaysInMonthArr(y) {
+            return [31, isLeapYear(y) ? 29 : 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
+        }
+
+        const DATA_START_YEAR = 2026;
+        const DATA_END_YEAR = 2026;
+        const YEAR_RANGE_PAST = 5;
+        const YEAR_RANGE_FUTURE = 5;
+
+        let dailyData = [];
+        let year = new Date().getFullYear();   // open on today's year
+        let daysInMonthArr = getDaysInMonthArr(year);
+
+        const existingData = {
+            '2026-01-01':'On Time','2026-01-02':'Absent','2026-01-03':'On Time','2026-01-04':'On Time',
+            '2026-01-05':'On Time','2026-01-06':'On Time','2026-01-07':'On Time','2026-01-08':'On Time',
+            '2026-01-09':'On Time','2026-01-10':'On Time','2026-01-11':'On Time','2026-01-12':'On Time',
+            '2026-01-13':'On Time','2026-01-14':'Absent','2026-01-15':'Late','2026-01-16':'On Time',
+            '2026-01-17':'On Time','2026-01-18':'On Time','2026-01-19':'On Time','2026-01-20':'On Time',
+            '2026-01-21':'Late','2026-01-22':'On Time','2026-01-23':'On Time','2026-01-24':'On Time',
+            '2026-01-25':'On Time','2026-01-26':'On Time','2026-01-27':'On Time','2026-01-28':'On Time',
+            '2026-01-29':'On Time','2026-01-30':'On Time','2026-01-31':'On Time',
+            '2026-02-01':'On Time','2026-02-02':'On Time','2026-02-03':'On Time','2026-02-04':'On Time',
+            '2026-02-06':'On Time','2026-02-07':'On Time','2026-02-08':'On Time','2026-02-09':'On Time',
+            '2026-02-10':'On Time','2026-02-11':'On Time','2026-02-13':'On Time','2026-02-14':'On Time',
+            '2026-02-16':'On Time','2026-02-17':'On Time','2026-02-18':'Absent','2026-02-19':'On Time',
+            '2026-02-20':'On Time','2026-02-21':'On Time','2026-02-22':'On Time','2026-02-23':'On Time',
+            '2026-02-24':'On Time','2026-02-25':'Absent','2026-02-26':'Absent','2026-02-27':'Late',
+            '2026-02-28':'On Time',
+            '2026-03-01':'On Time','2026-03-02':'On Time','2026-03-03':'On Time','2026-03-04':'On Time',
+            '2026-03-05':'On Time','2026-03-06':'On Time','2026-03-08':'On Time','2026-03-09':'Absent',
+            '2026-03-10':'On Time','2026-03-11':'On Time','2026-03-12':'On Time','2026-03-13':'On Time',
+            '2026-03-15':'On Time','2026-03-16':'On Time','2026-03-17':'On Time','2026-03-18':'On Time',
+            '2026-03-19':'Absent','2026-03-20':'Late','2026-03-22':'On Time','2026-03-23':'On Time',
+            '2026-03-24':'On Time','2026-03-25':'On Time','2026-03-26':'On Time','2026-03-27':'Absent',
+            '2026-03-28':'Absent','2026-03-29':'Absent','2026-03-30':'On Time','2026-03-31':'On Time',
+            '2026-04-01':'On Time','2026-04-02':'On Time','2026-04-03':'On Time','2026-04-04':'On Time',
+            '2026-04-06':'On Time','2026-04-07':'On Time','2026-04-08':'On Time','2026-04-09':'Absent',
+            '2026-04-10':'Absent','2026-04-11':'On Time','2026-04-12':'On Time','2026-04-13':'On Time',
+            '2026-04-15':'On Time','2026-04-16':'On Time','2026-04-17':'On Time','2026-04-18':'On Time',
+            '2026-04-20':'On Time','2026-04-21':'On Time','2026-04-22':'On Time','2026-04-23':'On Time',
+            '2026-04-24':'On Time','2026-04-25':'On Time','2026-04-26':'On Time','2026-04-27':'On Time',
+            '2026-04-28':'On Time','2026-04-29':'On Time','2026-04-30':'On Time',
+            '2026-05-02':'On Time','2026-05-03':'On Time','2026-05-04':'On Time','2026-05-05':'On Time',
+            '2026-05-06':'On Time','2026-05-07':'On Time','2026-05-09':'Absent','2026-05-10':'On Time',
+            '2026-05-11':'On Time','2026-05-12':'On Time','2026-05-13':'Late','2026-05-14':'On Time',
+            '2026-05-16':'On Time','2026-05-17':'On Time','2026-05-18':'On Time','2026-05-19':'On Time',
+            '2026-05-20':'On Time','2026-05-21':'On Time','2026-05-23':'On Time','2026-05-24':'Absent',
+            '2026-05-25':'On Time','2026-05-26':'On Time','2026-05-27':'On Time','2026-05-28':'On Time',
+            '2026-05-30':'Absent','2026-05-31':'Absent',
+            '2026-06-01':'Absent','2026-06-02':'Absent','2026-06-03':'On Time','2026-06-04':'Late',
+            '2026-06-05':'On Time','2026-06-06':'On Time','2026-06-07':'On Time','2026-06-08':'On Time',
+            '2026-06-09':'On Time','2026-06-10':'On Time','2026-06-11':'On Time','2026-06-12':'On Time',
+            '2026-06-13':'On Time','2026-06-14':'On Time','2026-06-15':'Absent','2026-06-16':'On Time',
+            '2026-06-17':'On Time','2026-06-18':'On Time','2026-06-19':'On Time','2026-06-20':'Absent',
+            '2026-06-21':'On Time','2026-06-22':'On Time','2026-06-23':'On Time','2026-06-24':'On Time',
+            '2026-06-25':'On Time','2026-06-26':'On Time','2026-06-27':'On Time','2026-06-28':'On Time',
+            '2026-06-29':'On Time','2026-06-30':'On Time',
+            '2026-07-01':'On Time','2026-07-02':'On Time','2026-07-03':'On Time','2026-07-04':'On Time',
+            '2026-07-06':'On Time','2026-07-07':'Absent','2026-07-08':'Absent','2026-07-09':'On Time',
+            '2026-07-10':'On Time','2026-07-11':'On Time','2026-07-12':'Absent','2026-07-13':'On Time',
+            '2026-07-14':'On Time','2026-07-15':'On Time','2026-07-16':'On Time','2026-07-17':'On Time',
+            '2026-07-18':'On Time','2026-07-19':'On Time','2026-07-20':'On Time','2026-07-21':'On Time',
+            '2026-07-22':'On Time','2026-07-23':'On Time','2026-07-24':'On Time','2026-07-25':'On Time',
+            '2026-07-26':'On Time','2026-07-27':'On Time','2026-07-28':'On Time','2026-07-29':'On Time',
+            '2026-07-30':'On Time','2026-07-31':'On Time'
+        };
+
+        const existingLeave = {
+            '2026-01-14':'CL','2026-02-18':'CL','2026-02-25':'SL','2026-02-26':'SL',
+            '2026-03-09':'CL','2026-03-19':'CL','2026-03-27':'CL','2026-03-28':'CL','2026-03-29':'CL',
+            '2026-04-09':'CL','2026-04-10':'SL','2026-05-09':'EL','2026-05-30':'EL','2026-05-31':'EL',
+            '2026-06-01':'EL','2026-06-02':'EL','2026-06-15':'EL','2026-06-20':'EL',
+            '2026-07-07':'CL','2026-07-08':'EL'
+        };
+
+        // ============================================================
+        // PERSISTENCE: auto-save in this browser + backup files
+        // ============================================================
+        const STORAGE_KEY = 'yma-attendance-dashboard:v1';
+        const BACKUP_APP = 'attendance-dashboard';
+        const BACKUP_VERSION = 1;
+        const STATUS_VALUES = ['On Time', 'Late', 'Absent'];
+        const LEAVE_VALUES = ['EL', 'CL', 'SL', 'LWP'];
+        const SAMPLE_DATA = Object.assign({}, existingData);    // the original sample data, for "Restore sample data"
+        const SAMPLE_LEAVE = Object.assign({}, existingLeave);
+        let storageOk = true;
+        let lastSavedAt = null;
+
+        function pad2(n) { return String(n).padStart(2, '0'); }
+        function dateKey(d) { return `${d.getFullYear()}-${pad2(d.getMonth() + 1)}-${pad2(d.getDate())}`; }
+        function todayKey() { return dateKey(new Date()); }
+        function keyToDate(k) { const p = k.split('-'); return new Date(+p[0], +p[1] - 1, +p[2]); }
+        function isFridayKey(k) { return keyToDate(k).getDay() === 5; }
+        function statusOf(k) { return isFridayKey(k) ? 'Friday' : (existingData[k] || ''); }
+        function plural(n, w) { return `${n} ${w}${n === 1 ? '' : 's'}`; }
+        function isRealDate(k) {
+            const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(k);
+            if (!m) return false;
+            const y = +m[1], mo = +m[2], d = +m[3];
+            const dt = new Date(y, mo - 1, d);
+            return dt.getFullYear() === y && dt.getMonth() === mo - 1 && dt.getDate() === d;
+        }
+
+        function countEntries(data, leave) {
+            return { marked: Object.keys(data).filter(k => !isFridayKey(k)).length, leave: Object.keys(leave).length };
+        }
+
+        // Validates a parsed backup and returns clean copies. Nothing from the file is trusted:
+        // keys must be real dates and values must come from the known lists.
+        function validateBackup(obj) {
+            const isObj = v => v !== null && typeof v === 'object' && !Array.isArray(v);
+            if (!isObj(obj)) return { ok: false, error: 'the file is not an attendance backup.' };
+            if (obj.app !== BACKUP_APP) return { ok: false, error: 'this file was not exported from this dashboard.' };
+            if (obj.version !== BACKUP_VERSION) return { ok: false, error: 'unsupported backup version.' };
+            if (!isObj(obj.data) || !isObj(obj.leave)) return { ok: false, error: 'the attendance data is missing.' };
+            const dKeys = Object.keys(obj.data), lKeys = Object.keys(obj.leave);
+            if (dKeys.length > 20000 || lKeys.length > 20000) return { ok: false, error: 'the file is too large.' };
+            const data = {}, leave = {};
+            for (const k of dKeys) {
+                if (!isRealDate(k)) return { ok: false, error: `"${String(k).slice(0, 24)}" is not a valid date.` };
+                if (!STATUS_VALUES.includes(obj.data[k])) return { ok: false, error: `unknown status on ${k}.` };
+                data[k] = obj.data[k];
+            }
+            for (const k of lKeys) {
+                if (!isRealDate(k)) return { ok: false, error: `"${String(k).slice(0, 24)}" is not a valid date.` };
+                if (!LEAVE_VALUES.includes(obj.leave[k])) return { ok: false, error: `unknown leave type on ${k}.` };
+                if (data[k] !== 'Absent') return { ok: false, error: `leave on ${k} needs that day to be marked Absent.` };
+                leave[k] = obj.leave[k];
+            }
+            const years = Array.from(new Set(dKeys.concat(lKeys).map(k => k.slice(0, 4)))).sort();
+            const c = countEntries(data, leave);
+            return { ok: true, data, leave, meta: { exportedAt: typeof obj.exportedAt === 'string' ? obj.exportedAt : null, years, marked: c.marked, leave: c.leave } };
+        }
+
+        function sortedCopy(o) { const out = {}; Object.keys(o).sort().forEach(k => { out[k] = o[k]; }); return out; }
+        function buildBackupObject() {
+            return { app: BACKUP_APP, version: BACKUP_VERSION, exportedAt: new Date().toISOString(), data: sortedCopy(existingData), leave: sortedCopy(existingLeave) };
+        }
+        function replaceMaps(data, leave) {
+            Object.keys(existingData).forEach(k => { delete existingData[k]; });
+            Object.keys(existingLeave).forEach(k => { delete existingLeave[k]; });
+            Object.assign(existingData, data);
+            Object.assign(existingLeave, leave);
+        }
+
+        function saveState() {
+            try {
+                window.localStorage.setItem(STORAGE_KEY, JSON.stringify(buildBackupObject()));
+                storageOk = true;
+                lastSavedAt = new Date();
+            } catch (e) {
+                storageOk = false;   // private mode, blocked storage or full disk: keep working, tell the user
+            }
+            updateSaveIndicator();
+        }
+
+        function loadSavedState() {
+            let raw = null;
+            try { raw = window.localStorage.getItem(STORAGE_KEY); } catch (e) { storageOk = false; return false; }
+            if (!raw) return false;
+            try {
+                const r = validateBackup(JSON.parse(raw));
+                if (!r.ok) return false;          // unreadable or tampered: fall back to the sample data
+                replaceMaps(r.data, r.leave);
+                const t = r.meta.exportedAt ? new Date(r.meta.exportedAt) : null;
+                if (t && !isNaN(t)) lastSavedAt = t;
+                return true;
+            } catch (e) { return false; }
+        }
+
+        function updateSaveIndicator() {
+            const btn = document.getElementById('backupBtn');
+            const status = document.getElementById('backupStatus');
+            if (!btn || !status) return;
+            ['saveDot', 'saveDotModal'].forEach(id => { const d = document.getElementById(id); if (d) d.className = 'save-dot ' + (storageOk ? 'ok' : 'warn'); });
+            if (storageOk) {
+                const t = lastSavedAt ? ` \u00b7 last saved ${lastSavedAt.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}` : '';
+                status.textContent = 'Auto-saved in this browser' + t;
+                btn.title = 'Backup & data \u2014 changes are saved automatically';
+            } else {
+                status.textContent = 'Auto-save is unavailable in this browser. Export a backup to keep your data.';
+                btn.title = 'Backup & data \u2014 auto-save unavailable, export a backup';
+            }
+        }
+
+        function buildDailyData(targetYear) {
+            const arr = [];
+            const dim = getDaysInMonthArr(targetYear);
+            for (let m = 0; m < 12; m++) {
+                for (let d = 1; d <= dim[m]; d++) {
+                    const dateStr = `${targetYear}-${String(m+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+                    const dateObj = new Date(targetYear, m, d);
+                    const wd = dateObj.getDay();
+                    let status = '';
+                    if (wd === 5) status = 'Friday';
+                    else if (existingData[dateStr]) status = existingData[dateStr];
+                    let leave = existingLeave[dateStr] || null;
+                    arr.push({
+                        date: dateStr, month: monthNames[m], day: d,
+                        weekday: weekdayNames[wd], status: status, leave_type: leave
+                    });
+                }
+            }
+            return arr;
+        }
+
+        loadSavedState();   // saved edits win over the built-in sample data
+        dailyData = buildDailyData(year);
+        daysInMonthArr = getDaysInMonthArr(year);
+
+        // ---- Year switcher wiring ----------------------------------------------
+        function populateYearSelect() {
+            const sel = document.getElementById('yearSelect');
+            const todayYear = new Date().getFullYear();
+            const minYear = Math.min(DATA_START_YEAR, todayYear) - YEAR_RANGE_PAST;
+            const maxYear = Math.max(DATA_END_YEAR, todayYear) + YEAR_RANGE_FUTURE;
+            sel.innerHTML = '';
+            for (let y = minYear; y <= maxYear; y++) {
+                const opt = document.createElement('option');
+                opt.value = y;
+                opt.textContent = y;
+                sel.appendChild(opt);
+            }
+            sel.value = String(year);
+        }
+
+        function updateNoDataBanner() {
+            const banner = document.getElementById('noDataBanner');
+            const hasData = yearHasData(year);
+            banner.style.display = hasData ? 'none' : 'inline-block';
+            if (!hasData) document.getElementById('noDataYear').textContent = year;
+        }
+
+        function updateYearNavState() {
+            const sel = document.getElementById('yearSelect');
+            document.getElementById('yearPrevBtn').disabled = year <= parseInt(sel.options[0].value, 10);
+            document.getElementById('yearNextBtn').disabled = year >= parseInt(sel.options[sel.options.length - 1].value, 10);
+        }
+
+        function setYear(newYear) {
+            newYear = parseInt(newYear, 10);
+            if (isNaN(newYear)) return;
+            year = newYear;
+            clearSelection(false, true);   // a selection belongs to the year it was made in
+            daysInMonthArr = getDaysInMonthArr(year);
+            dailyData = buildDailyData(year);
+
+            document.getElementById('yearLabel').textContent = year;
+            document.getElementById('yearSelect').value = String(year);
+
+            updateYearNavState();
+            updateNoDataBanner();
+            updateStats();
+            updateCharts();
+            updateLeaveBalance();
+            showMonth(currentMonth);
+        }
+
+        document.getElementById('yearSelect').addEventListener('change', (e) => setYear(e.target.value));
+        document.getElementById('yearPrevBtn').addEventListener('click', () => {
+            const sel = document.getElementById('yearSelect');
+            const minY = parseInt(sel.options[0].value, 10);
+            if (year - 1 >= minY) setYear(year - 1);
+        });
+        document.getElementById('yearNextBtn').addEventListener('click', () => {
+            const sel = document.getElementById('yearSelect');
+            const maxY = parseInt(sel.options[sel.options.length - 1].value, 10);
+            if (year + 1 <= maxY) setYear(year + 1);
+        });
+        populateYearSelect();
+        updateYearNavState();
+
+        let currentMonth = monthNames[new Date().getMonth()];   // open on today's month
+        let bulkDates = null;                                   // set while the leave modal targets a selection
+        let selectMode = false, selection = new Set(), anchorDate = null;
+        let dragStart = null, dragMoved = false, dragPreview = null, justDragged = false;
+        let toastTimer = null, toastMs = 9000, currentUndo = null, pendingBackup = null;
+        let editingDate = null;
+        let selectedStatus = null;
+        let selectedLeaveType = null;
+        let trendChart, leaveBreakdownChart;
+
+        function yearHasData(targetYear) {
+            const prefix = `${targetYear}-`;
+            for (const key in existingData) { if (key.startsWith(prefix)) return true; }
+            for (const key in existingLeave) { if (key.startsWith(prefix)) return true; }
+            return false;
+        }
+
+        function getLeaveUsed() {
+            return {
+                EL: dailyData.filter(d => d.leave_type === 'EL').length,
+                CL: dailyData.filter(d => d.leave_type === 'CL').length,
+                SL: dailyData.filter(d => d.leave_type === 'SL').length,
+                LWP: dailyData.filter(d => d.leave_type === 'LWP').length
+            };
+        }
+
+        function computeMonthly() {
+            const result = [];
+            for (let m = 0; m < 12; m++) {
+                const month = monthNames[m];
+                const mdata = dailyData.filter(d => d.month === month);
+                const present = mdata.filter(d => d.status === 'On Time').length;
+                const late = mdata.filter(d => d.status === 'Late').length;
+                const absent = mdata.filter(d => d.status === 'Absent').length;
+                const friday = mdata.filter(d => d.status === 'Friday').length;
+                const blank = mdata.filter(d => d.status === '').length;
+                const el = mdata.filter(d => d.leave_type === 'EL').length;
+                const cl = mdata.filter(d => d.leave_type === 'CL').length;
+                const sl = mdata.filter(d => d.leave_type === 'SL').length;
+                const lwp = mdata.filter(d => d.leave_type === 'LWP').length;
+                const working = present + late + absent + blank; // total non-Friday days in month
+                const marked = present + late + absent; // days with an actual recorded status
+                const rate = marked > 0 ? Math.round((present / marked) * 1000) / 10 : 0;
+                result.push({ month, present, late, absent, friday, blank, el, cl, sl, lwp, attendance_rate: rate, total_working: working });
+            }
+            return result;
+        }
+
+        function updateStats() {
+            const present = dailyData.filter(d => d.status === 'On Time').length;
+            const late = dailyData.filter(d => d.status === 'Late').length;
+            const absent = dailyData.filter(d => d.status === 'Absent').length;
+            const blank = dailyData.filter(d => d.status === '').length;
+            // Total working days = every non-Friday calendar day (per company policy: no office Fridays,
+            // Sat & Sun are working days). This is the true denominator for "how many working days this
+            // year", independent of how many have actually been marked yet.
+            const totalWorkingDays = dailyData.filter(d => d.status !== 'Friday').length;
+            // Marked days = the subset with an actual recorded status. Attendance rate is only meaningful
+            // against days that have been marked, so it uses this denominator, not totalWorkingDays.
+            const marked = present + late + absent;
+            const rate = marked > 0 ? Math.round((present / marked) * 1000) / 10 : 0;
+            const used = getLeaveUsed();
+            const totalLeave = used.EL + used.CL + used.SL + used.LWP;
+            document.getElementById('valPresent').textContent = present;
+            document.getElementById('valLate').textContent = late;
+            document.getElementById('valAbsent').textContent = absent;
+            document.getElementById('valRate').textContent = rate + '%';
+            document.getElementById('barRate').style.width = rate + '%';
+            document.getElementById('valLeave').textContent = totalLeave;
+            document.getElementById('subLeave').textContent = `EL:${used.EL} CL:${used.CL} SL:${used.SL}`;
+            document.getElementById('valWorking').textContent = totalWorkingDays;
+            const workingSub = document.querySelector('.stat-card.working .stat-sub');
+            if (workingSub) {
+                workingSub.textContent = blank > 0
+                    ? `Days (Mon-Thu, Sat-Sun) · ${blank} unmarked`
+                    : 'Days (Mon-Thu, Sat-Sun)';
+            }
+            updateResetButton();
+        }
+
+        // A month with no marked days has no data; plot a gap instead of a misleading 0.
+        function trendValue(d, key) { return (d.present + d.late + d.absent) > 0 ? d[key] : null; }
+
+        function buildTrendConfig(m) {
+            return {
+                type: 'line',
+                data: {
+                    labels: m.map(d => d.month.slice(0,3)),
+                    datasets: [
+                        { label: 'Present', data: m.map(d => trendValue(d, 'present')), borderColor: '#1f8055', backgroundColor: 'rgba(63,174,122,0.12)', fill: true, tension: 0.4, pointRadius: 3, pointHoverRadius: 6, borderWidth: 2 },
+                        { label: 'Late', data: m.map(d => trendValue(d, 'late')), borderColor: '#95591a', backgroundColor: 'rgba(232,163,61,0.14)', fill: true, tension: 0.4, pointRadius: 3, pointHoverRadius: 6, borderWidth: 2 },
+                        { label: 'Absent', data: m.map(d => trendValue(d, 'absent')), borderColor: '#b93d31', backgroundColor: 'rgba(226,104,94,0.12)', fill: true, tension: 0.4, pointRadius: 3, pointHoverRadius: 6, borderWidth: 2 }
+                    ]
+                },
+                options: { responsive: true, maintainAspectRatio: false, interaction: { mode: 'index', intersect: false }, plugins: { legend: { position: 'top', align: 'end', labels: { usePointStyle: true, padding: 10, boxWidth: 8 } } }, scales: { y: { beginAtZero: true, grid: { color: 'rgba(28,111,176,0.08)' }, ticks: { padding: 4, precision: 0 } }, x: { grid: { display: false }, ticks: { padding: 4 } } } }
+            };
+        }
+
+        function buildLeaveBreakdownConfig(m) {
+            return {
+                type: 'bar',
+                data: { labels: m.map(d => d.month.slice(0,3)), datasets: [
+                    { label: 'EL', data: m.map(d => d.el), backgroundColor: '#ef8a4c', borderRadius: 3, barThickness: 10 },
+                    { label: 'CL', data: m.map(d => d.cl), backgroundColor: '#35b6c9', borderRadius: 3, barThickness: 10 },
+                    { label: 'SL', data: m.map(d => d.sl), backgroundColor: '#e2699d', borderRadius: 3, barThickness: 10 },
+                    { label: 'LWP', data: m.map(d => d.lwp), backgroundColor: '#64748b', borderRadius: 3, barThickness: 10 }
+                ]},
+                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'top', align: 'end', labels: { usePointStyle: true, padding: 8, boxWidth: 8 } } }, scales: { x: { grid: { display: false }, ticks: { padding: 4 } }, y: { beginAtZero: true, grid: { color: 'rgba(28,111,176,0.08)' }, ticks: { padding: 4, precision: 0 } } } }
+            };
+        }
+
+        function initCharts() {
+            const m = computeMonthly();
+            Chart.defaults.color = '#64748b';
+            Chart.defaults.borderColor = 'rgba(28,111,176,0.08)';
+            Chart.defaults.font.family = "'Segoe UI', system-ui, sans-serif";
+            Chart.defaults.font.size = 11;
+
+            trendChart = new Chart(document.getElementById('trendChartCanvas'), buildTrendConfig(m));
+            leaveBreakdownChart = new Chart(document.getElementById('leaveBreakdownChartCanvas'), buildLeaveBreakdownConfig(m));
+
+            updateLeaveBalance();
+        }
+
+        function updateCharts() {
+            const m = computeMonthly();
+            const monthLabels = m.map(d => d.month.slice(0,3));
+
+            trendChart.data.labels = monthLabels;
+            trendChart.data.datasets[0].data = m.map(d => trendValue(d, 'present'));
+            trendChart.data.datasets[1].data = m.map(d => trendValue(d, 'late'));
+            trendChart.data.datasets[2].data = m.map(d => trendValue(d, 'absent'));
+            trendChart.update();
+
+            leaveBreakdownChart.data.labels = monthLabels;
+            leaveBreakdownChart.data.datasets[0].data = m.map(d => d.el);
+            leaveBreakdownChart.data.datasets[1].data = m.map(d => d.cl);
+            leaveBreakdownChart.data.datasets[2].data = m.map(d => d.sl);
+            leaveBreakdownChart.data.datasets[3].data = m.map(d => d.lwp);
+            leaveBreakdownChart.update();
+
+            updateLeaveBalance();
+        }
+
+        function getDaysInMonth(month, year) { return new Date(year, month, 0).getDate(); }
+        function getFirstDayOfMonth(month, year) { return new Date(year, month - 1, 1).getDay(); }
+
+        function showMonth(monthName) {
+            currentMonth = monthName;
+            document.querySelectorAll('.month-tab').forEach(tab => {
+                tab.classList.toggle('active', tab.dataset.month === monthName);
+            });
+            const monthIndex = monthNames.indexOf(monthName) + 1;
+            const daysInMonth = getDaysInMonth(monthIndex, year);
+            const firstDay = getFirstDayOfMonth(monthIndex, year);
+            const container = document.getElementById('calendarContainer');
+            const tKey = todayKey();
+            let html = '<div class="calendar-grid">';
+            weekdayNames.forEach((day, i) => html += `<div class="cal-header ${i === 5 ? 'friday' : ''}">${day}</div>`);
+            for (let i = 0; i < firstDay; i++) html += '<div class="cal-day empty"></div>';
+            for (let day = 1; day <= daysInMonth; day++) {
+                const dateStr = `${year}-${String(monthIndex).padStart(2,'0')}-${String(day).padStart(2,'0')}`;
+                const record = dailyData.find(d => d.date === dateStr);
+                let statusClass = 'blank', statusText = '', leaveBadge = '';
+                let isFriday = false;
+                if (record) {
+                    if (record.status === 'On Time') { statusClass = 'present'; statusText = 'On'; }
+                    else if (record.status === 'Late') { statusClass = 'late'; statusText = 'Late'; }
+                    else if (record.status === 'Absent') { statusClass = 'absent'; statusText = 'Abs'; }
+                    else if (record.status === 'Friday') { statusClass = 'friday'; statusText = ''; isFriday = true; }
+                    if (record.leave_type) leaveBadge = `<span class="leave-badge ${record.leave_type.toLowerCase()}">${record.leave_type}</span>`;
+                }
+                const isEditable = !isFriday && statusClass !== 'empty';
+                const clickAttr = isEditable ? `onclick="openEdit('${dateStr}')"` : '';
+                const isToday = dateStr === tKey, isSelected = selection.has(dateStr);
+                const extraClass = (isToday ? ' today' : '') + (isSelected ? ' selected' : '');
+                const ariaAttr = (isToday ? ' aria-current="date"' : '') + (isSelected ? ' aria-selected="true"' : '');
+                html += `<div class="cal-day ${statusClass}${extraClass}" ${clickAttr}${ariaAttr} data-date="${dateStr}" data-status="${record ? record.status : 'Blank'}" data-leave="${record && record.leave_type ? record.leave_type : ''}"><span class="day-num">${day}</span><span class="day-status">${statusText}</span>${leaveBadge}</div>`;
+            }
+            html += '</div>';
+            container.innerHTML = html;
+
+            document.querySelectorAll('.cal-day:not(.empty):not(.friday)').forEach(cell => {
+                cell.addEventListener('mouseenter', (e) => {
+                    const t = document.getElementById('tooltip');
+                    const d = e.target.dataset.date; const s = e.target.dataset.status; const l = e.target.dataset.leave;
+                    if (d) { t.innerHTML = `<strong>${d}</strong><br>${s}${l ? ' · ' + l : ''}`; t.style.display = 'block'; }
+                });
+                cell.addEventListener('mousemove', (e) => { const t = document.getElementById('tooltip'); t.style.left = (e.clientX + 12) + 'px'; t.style.top = (e.clientY + 12) + 'px'; });
+                cell.addEventListener('mouseleave', () => { document.getElementById('tooltip').style.display = 'none'; });
+            });
+
+            const m = computeMonthly().find(d => d.month === monthName);
+            if (m) {
+                document.getElementById('monthDetail').innerHTML = `
+                    <div class="detail-item"><div class="label">Rate</div><div class="value" style="color:var(--accent-deep);">${m.attendance_rate}%</div></div>
+                    <div class="detail-item"><div class="label">Working</div><div class="value" style="color:var(--text);">${m.total_working}</div></div>
+                    <div class="detail-item"><div class="label">Present</div><div class="value" style="color:var(--success);">${m.present}</div></div>
+                    <div class="detail-item"><div class="label">Late</div><div class="value" style="color:var(--warning);">${m.late}</div></div>
+                    <div class="detail-item"><div class="label">Absent</div><div class="value" style="color:var(--danger);">${m.absent}</div></div>
+                    <div class="detail-item"><div class="label">Friday</div><div class="value" style="color:var(--text-muted);">${m.friday}</div></div>
+                    <div class="detail-item"><div class="label">Blank</div><div class="value" style="color:var(--text-muted);">${m.blank}</div></div>
+                    <div class="detail-item"><div class="label">EL</div><div class="value" style="color:var(--el-text);">${m.el}</div></div>
+                `;
+            }
+            updateCalendarToolbar();
+        }
+
+        function openEdit(dateStr) {
+            editingDate = dateStr;
+            selectedStatus = null;
+            selectedLeaveType = null;
+            document.getElementById('modalDate').textContent = dateStr;
+            document.querySelectorAll('#editModal .modal-option').forEach(opt => opt.classList.remove('selected'));
+            const record = dailyData.find(d => d.date === dateStr);
+            if (record && record.status && record.status !== 'Friday' && record.status !== '') {
+                const opt = document.querySelector(`#editModal .modal-option[data-status="${record.status}"]`);
+                if (opt) { opt.classList.add('selected'); selectedStatus = record.status; }
+            } else if (record && record.status === '') {
+                const opt = document.querySelector('#editModal .modal-option[data-status="Blank"]');
+                if (opt) { opt.classList.add('selected'); selectedStatus = 'Blank'; }
+            }
+            document.getElementById('editModal').classList.add('show');
+        }
+
+        function selectOption(el) {
+            document.querySelectorAll('#editModal .modal-option').forEach(opt => opt.classList.remove('selected'));
+            el.classList.add('selected');
+            selectedStatus = el.dataset.status;
+            if (selectedStatus === 'Absent') {
+                setTimeout(() => openLeaveModal(), 150);
+            }
+        }
+
+        function openLeaveModal() {
+            document.getElementById('editModal').classList.remove('show');
+            const targets = bulkDates || [editingDate];
+            document.getElementById('leaveModalDate').textContent = bulkDates ? describeSelection(bulkDates) : editingDate;
+            selectedLeaveType = null;
+            const used = getLeaveUsed();
+            const n = targets.length;
+            // leave already on the target days gets replaced, so it must not count against the new total
+            const replacing = { EL: 0, CL: 0, SL: 0, LWP: 0 };
+            targets.forEach(d => { const t = existingLeave[d]; if (t) replacing[t]++; });
+            const currentLeave = bulkDates ? null : (existingLeave[editingDate] || null);
+
+            document.getElementById('elBar').style.width = Math.min((used.EL / YEARLY_LIMITS.EL) * 100, 100) + '%';
+            document.getElementById('clBar').style.width = Math.min((used.CL / YEARLY_LIMITS.CL) * 100, 100) + '%';
+            document.getElementById('slBar').style.width = Math.min((used.SL / YEARLY_LIMITS.SL) * 100, 100) + '%';
+
+            const elRem = YEARLY_LIMITS.EL - used.EL;
+            const clRem = YEARLY_LIMITS.CL - used.CL;
+            const slRem = YEARLY_LIMITS.SL - used.SL;
+
+            document.getElementById('elRemaining').textContent = `${used.EL} / ${YEARLY_LIMITS.EL} used · ${elRem} remaining`;
+            document.getElementById('clRemaining').textContent = `${used.CL} / ${YEARLY_LIMITS.CL} used · ${clRem} remaining`;
+            document.getElementById('slRemaining').textContent = `${used.SL} / ${YEARLY_LIMITS.SL} used · ${slRem} remaining`;
+
+            document.querySelectorAll('#leaveOptions .modal-option').forEach(opt => {
+                opt.classList.remove('selected', 'disabled');
+                opt.removeAttribute('title');
+                const leave = opt.dataset.leave;
+                const limit = YEARLY_LIMITS[leave];
+                if (limit !== undefined) {
+                    const after = used[leave] - replacing[leave] + n;
+                    if (after > limit && after > used[leave]) {   // only block changes that would exceed the allowance
+                        opt.classList.add('disabled');
+                        opt.title = `Not enough ${leave} left for ${plural(n, 'day')}`;
+                    }
+                }
+                if (currentLeave === leave) { opt.classList.add('selected'); selectedLeaveType = leave; }
+            });
+
+            document.getElementById('leaveModal').classList.add('show');
+        }
+
+        function selectLeaveType(el) {
+            if (el.classList.contains('disabled')) return;
+            document.querySelectorAll('#leaveOptions .modal-option').forEach(opt => opt.classList.remove('selected'));
+            el.classList.add('selected');
+            selectedLeaveType = el.dataset.leave;
+        }
+
+        function backToMain() {
+            document.getElementById('leaveModal').classList.remove('show');
+            selectedLeaveType = null;
+            if (bulkDates) { bulkDates = null; return; }   // bulk: back to the selection, not the single-day editor
+            document.getElementById('editModal').classList.add('show');
+        }
+
+        function closeModal() {
+            document.getElementById('editModal').classList.remove('show');
+            document.getElementById('leaveModal').classList.remove('show');
+            document.getElementById('resetModal').classList.remove('show');
+            document.getElementById('backupModal').classList.remove('show');
+            resetBackupPanel();
+            editingDate = null;
+            bulkDates = null;
+            selectedStatus = null;
+            selectedLeaveType = null;
+        }
+
+        // ============================================================
+        // CORE DATA OPERATIONS
+        // The two maps are the single source of truth; dailyData is rebuilt from them,
+        // so every change (single edit, bulk edit, reset, import, undo) goes through here.
+        // ============================================================
+        function setDayState(date, status, leave) {
+            if (status) existingData[date] = status; else delete existingData[date];
+            if (leave) existingLeave[date] = leave; else delete existingLeave[date];
+        }
+
+        function snapshotDays(dates) {
+            return dates.map(d => ({ date: d, status: existingData[d] || '', leave: existingLeave[d] || null }));
+        }
+
+        function afterDataChange() {
+            dailyData = buildDailyData(year);
+            updateNoDataBanner();
+            updateStats();
+            updateCharts();
+            showMonth(currentMonth);
+            saveState();
+        }
+
+        // Apply one state to many days, then offer Undo.
+        function applyChanges(label, dates, status, leave) {
+            if (!dates.length) return;
+            const prev = snapshotDays(dates);
+            dates.forEach(d => setDayState(d, status, leave));
+            afterDataChange();
+            showToast(label, () => {
+                prev.forEach(p => setDayState(p.date, p.status, p.leave));
+                afterDataChange();
+            });
+        }
+
+        // ---------------------------------------------------------------- toast
+        function showToast(message, undoFn, ms) {
+            document.getElementById('toastMsg').textContent = message;
+            currentUndo = undoFn || null;
+            document.getElementById('toastUndo').hidden = !undoFn;
+            document.getElementById('toast').classList.add('show');
+            toastMs = ms || 9000;
+            clearTimeout(toastTimer);
+            toastTimer = setTimeout(hideToast, toastMs);
+        }
+        // Don't take the Undo away while someone is reaching for it (pointer over it or keyboard focus in it).
+        function pauseToast() { clearTimeout(toastTimer); }
+        function resumeToast() {
+            if (!document.getElementById('toast').classList.contains('show')) return;
+            clearTimeout(toastTimer);
+            toastTimer = setTimeout(hideToast, toastMs);
+        }
+        function hideToast() {
+            document.getElementById('toast').classList.remove('show');
+            currentUndo = null;
+            clearTimeout(toastTimer);
+        }
+        function undoLast() {
+            if (!currentUndo) return;
+            const fn = currentUndo;
+            hideToast();
+            fn();
+        }
+
+        // ---------------------------------------------------------------- reset
+        function getResetSummary() {
+            return {
+                marked: dailyData.filter(d => d.status === 'On Time' || d.status === 'Late' || d.status === 'Absent').length,
+                leave: dailyData.filter(d => d.leave_type).length
+            };
+        }
+
+        function updateResetButton() {
+            const btn = document.getElementById('resetBtn');
+            const s = getResetSummary();
+            const empty = s.marked === 0 && s.leave === 0;
+            btn.disabled = empty;
+            btn.title = empty ? `Nothing to reset for ${year}` : `Clear all attendance for ${year}`;
+        }
+
+        function openResetModal() {
+            const s = getResetSummary();
+            if (s.marked === 0 && s.leave === 0) return;
+            document.getElementById('resetYear').textContent = year;
+            document.getElementById('resetMarked').textContent = s.marked;
+            document.getElementById('resetLeave').textContent = s.leave;
+            document.getElementById('resetModal').classList.add('show');
+            // Default focus on the safe choice so Enter/Space can't trigger the destructive action by accident.
+            document.getElementById('resetCancelBtn').focus();
+        }
+
+        function confirmReset() {
+            const prefix = `${year}-`;
+            // Clear every record for the year, including leave entries that sit on Fridays.
+            Object.keys(existingData).forEach(k => { if (k.startsWith(prefix)) delete existingData[k]; });
+            Object.keys(existingLeave).forEach(k => { if (k.startsWith(prefix)) delete existingLeave[k]; });
+            clearSelection(false, true);
+            afterDataChange();
+            closeModal();
+        }
+
+        // ---------------------------------------------------------------- single-day edits
+        function saveStatus() {
+            if (!editingDate || !selectedStatus) { closeModal(); return; }
+            if (selectedStatus === 'Absent') {
+                // Absent always requires a leave type. Never silently no-op here —
+                // route the user into the leave-type modal instead of dropping the click.
+                openLeaveModal();
+                return;
+            }
+            setDayState(editingDate, selectedStatus === 'Blank' ? '' : selectedStatus, null);
+            afterDataChange();
+            closeModal();
+        }
+
+        function saveLeaveType() {
+            if (!selectedLeaveType || (!bulkDates && !editingDate)) { closeModal(); return; }
+            const type = selectedLeaveType;
+            if (bulkDates) {
+                const dates = bulkDates.slice();
+                closeModal();
+                clearSelection(false, true);
+                applyChanges(`Marked ${plural(dates.length, 'day')} Absent \u00b7 ${type}`, dates, 'Absent', type);
+                return;
+            }
+            setDayState(editingDate, 'Absent', type);
+            afterDataChange();
+            closeModal();
+        }
+
+        // ---------------------------------------------------------------- today
+        function jumpToToday() {
+            const t = new Date();
+            if (t.getFullYear() !== year) setYear(t.getFullYear());
+            showMonth(monthNames[t.getMonth()]);
+        }
+
+        function markToday() {
+            const k = todayKey();
+            if (statusOf(k) !== '') return;
+            const t = keyToDate(k);
+            if (t.getFullYear() !== year) setYear(t.getFullYear());
+            currentMonth = monthNames[t.getMonth()];
+            applyChanges('Marked today On Time', [k], 'On Time', null);
+        }
+
+        // Blank working days in the viewed month, up to and including today (never the future).
+        function blankDaysToFill() {
+            const t = todayKey();
+            return dailyData.filter(d => d.month === currentMonth && d.status === '' && d.date <= t).map(d => d.date);
+        }
+
+        function fillBlanks() {
+            const dates = blankDaysToFill();
+            applyChanges(`Marked ${plural(dates.length, 'blank day')} On Time`, dates, 'On Time', null);
+        }
+
+        // ---------------------------------------------------------------- selecting several days
+        function rangeDates(a, b) {
+            if (a.slice(0, 4) !== b.slice(0, 4)) return [b];   // a range never spans two years
+            const from = a <= b ? a : b, to = a <= b ? b : a;
+            const out = [], d = keyToDate(from), end = keyToDate(to);
+            while (d <= end) {
+                if (d.getDay() !== 5) out.push(dateKey(d));      // Fridays are non-working days
+                d.setDate(d.getDate() + 1);
+            }
+            return out;
+        }
+
+        function selectionSpan(dates) {
+            const s = dates.slice().sort();
+            const fmt = k => keyToDate(k).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' });
+            return s.length === 1 ? fmt(s[0]) : `${fmt(s[0])} \u2013 ${fmt(s[s.length - 1])}`;
+        }
+        function describeSelection(dates) { return `${plural(dates.length, 'day')} \u00b7 ${selectionSpan(dates)}`; }
+
+        function clearSelection(render = true, exitMode = true) {
+            selection = new Set();
+            anchorDate = null;
+            if (exitMode) selectMode = false;
+            if (render) showMonth(currentMonth);
+        }
+
+        function setSelectMode(on) {
+            selectMode = on;
+            if (!on) { selection = new Set(); anchorDate = null; }
+            showMonth(currentMonth);
+        }
+
+        function selectToggle(date) {
+            if (selection.has(date)) selection.delete(date); else selection.add(date);
+            anchorDate = date;
+            selectMode = true;
+            showMonth(currentMonth);
+        }
+
+        function selectRangeTo(date, additive) {
+            const sameYear = anchorDate && anchorDate.slice(0, 4) === date.slice(0, 4);
+            const base = sameYear ? anchorDate : date;
+            const dates = rangeDates(base, date);
+            if (additive) dates.forEach(d => selection.add(d)); else selection = new Set(dates);
+            if (!sameYear) anchorDate = date;                    // the first shift-click sets the anchor
+            selectMode = true;
+            showMonth(currentMonth);
+        }
+
+        function applySelectionStatus(status) {                  // 'On Time' | 'Late' | 'Blank'
+            const dates = Array.from(selection).sort();
+            if (!dates.length) return;
+            clearSelection(false, true);
+            applyChanges(status === 'Blank' ? `Cleared ${plural(dates.length, 'day')}` : `Marked ${plural(dates.length, 'day')} ${status}`,
+                         dates, status === 'Blank' ? '' : status, null);
+        }
+
+        function openBulkLeave() {
+            const dates = Array.from(selection).sort();
+            if (!dates.length) return;
+            bulkDates = dates;
+            selectedStatus = 'Absent';
+            openLeaveModal();
+        }
+
+        function updateSelectionBar() {
+            const bar = document.getElementById('selectionBar');
+            bar.hidden = !(selectMode || selection.size > 0);
+            if (bar.hidden) return;
+            const dates = Array.from(selection);
+            const n = dates.length;
+            document.getElementById('selHint').hidden = n > 0;
+            document.getElementById('selCount').textContent = n ? plural(n, 'day') : '';
+            document.getElementById('selSpan').textContent = n ? selectionSpan(dates) : '';
+            const already = dates.filter(d => existingData[d]).length;
+            document.getElementById('selNote').textContent = already ? `${already} already marked` : '';
+            ['selOnTime', 'selLate', 'selAbsent', 'selBlank', 'selClear'].forEach(id => { document.getElementById(id).disabled = n === 0; });
+        }
+
+        function updateCalendarToolbar() {
+            const now = new Date();
+            const tk = dateKey(now);
+            const viewingToday = year === now.getFullYear() && currentMonth === monthNames[now.getMonth()];
+            document.getElementById('todayJumpBtn').disabled = viewingToday;
+
+            const st = statusOf(tk);
+            const markBtn = document.getElementById('markTodayBtn'), markLabel = document.getElementById('markTodayLabel');
+            if (st === '') {
+                markBtn.disabled = false; markLabel.textContent = 'Mark today On Time'; markBtn.title = 'Mark today as On Time';
+            } else if (st === 'Friday') {
+                markBtn.disabled = true; markLabel.textContent = 'No office today'; markBtn.title = 'Friday is a non-working day';
+            } else {
+                markBtn.disabled = true; markLabel.textContent = `Today: ${st}`; markBtn.title = 'Today is already marked. Click its date in the calendar to change it.';
+            }
+
+            const n = blankDaysToFill().length;
+            const fillBtn = document.getElementById('fillBlanksBtn');
+            fillBtn.disabled = n === 0;
+            document.getElementById('fillBlanksLabel').textContent = n === 0 ? 'Fill blanks' : `Fill ${plural(n, 'blank')} as On Time`;
+            fillBtn.title = n === 0 ? 'No blank days up to today in this month' : `Mark ${plural(n, 'blank day')} up to today as On Time`;
+
+            const sm = document.getElementById('selectModeBtn');
+            sm.setAttribute('aria-pressed', String(selectMode));
+            sm.classList.toggle('active', selectMode);
+            updateSelectionBar();
+        }
+
+        function wireCalendarSelection() {
+            const container = document.getElementById('calendarContainer');
+            const cellOf = el => (el && el.closest) ? el.closest('.cal-day[data-date]') : null;
+
+            container.addEventListener('mousedown', e => {
+                if (e.button !== 0) return;
+                const cell = cellOf(e.target);
+                dragStart = (cell && !cell.classList.contains('friday')) ? cell.dataset.date : null;
+                dragMoved = false;
+            });
+            container.addEventListener('mouseover', e => {
+                if (!dragStart || (e.buttons & 1) !== 1) return;
+                const cell = cellOf(e.target);
+                if (!cell || cell.classList.contains('friday')) return;
+                if (cell.dataset.date === dragStart && !dragMoved) return;
+                dragMoved = true;
+                dragPreview = new Set(rangeDates(dragStart, cell.dataset.date));
+                container.querySelectorAll('.cal-day[data-date]').forEach(c => c.classList.toggle('selected', dragPreview.has(c.dataset.date)));
+            });
+            document.addEventListener('mouseup', () => {
+                if (dragStart && dragMoved && dragPreview) {
+                    selection = dragPreview; anchorDate = dragStart; selectMode = true;
+                    justDragged = true;
+                    setTimeout(() => { justDragged = false; }, 0);   // swallow the click that follows a drag
+                    dragStart = null; dragMoved = false; dragPreview = null;
+                    showMonth(currentMonth);
+                    return;
+                }
+                dragStart = null; dragMoved = false; dragPreview = null;
+            });
+            // Capture phase: runs before a cell's own onclick (the single-day editor).
+            container.addEventListener('click', e => {
+                if (justDragged) { e.stopPropagation(); e.preventDefault(); return; }
+                const cell = cellOf(e.target);
+                if (!cell) return;
+                const modified = e.shiftKey || e.ctrlKey || e.metaKey;
+                if (!modified && !selectMode) return;               // plain click: normal edit flow
+                e.stopPropagation(); e.preventDefault();
+                if (cell.classList.contains('friday')) return;      // non-working day: not selectable
+                if (e.shiftKey) selectRangeTo(cell.dataset.date, e.ctrlKey || e.metaKey);
+                else selectToggle(cell.dataset.date);
+            }, true);
+        }
+
+        // ---------------------------------------------------------------- backup & data
+        function setBackupError(msg) {
+            const el = document.getElementById('backupError');
+            el.textContent = msg || '';
+            el.hidden = !msg;
+        }
+
+        function resetBackupPanel() {
+            pendingBackup = null;
+            document.getElementById('backupMain').hidden = false;
+            document.getElementById('backupConfirm').hidden = true;
+            setBackupError('');
+            document.getElementById('importFile').value = '';
+        }
+
+        function openBackupModal() {
+            resetBackupPanel();
+            updateSaveIndicator();
+            document.getElementById('backupModal').classList.add('show');
+            document.getElementById('exportBtn').focus();
+        }
+
+        function exportBackup() {
+            const blob = new Blob([JSON.stringify(buildBackupObject(), null, 2)], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `attendance-backup-${todayKey()}.json`;
+            document.body.appendChild(a);
+            a.click();
+            a.remove();
+            setTimeout(() => URL.revokeObjectURL(url), 1000);
+            closeModal();
+            showToast('Backup downloaded');
+        }
+
+        function askBackupConfirm(cfg) {
+            pendingBackup = cfg;
+            setBackupError('');
+            document.getElementById('bcTitle').textContent = cfg.title;
+            document.getElementById('bcText').textContent = cfg.text;
+            document.getElementById('bcMarked').textContent = cfg.marked;
+            document.getElementById('bcLeave').textContent = cfg.leave;
+            document.getElementById('bcOk').textContent = cfg.okLabel;
+            document.getElementById('backupMain').hidden = true;
+            document.getElementById('backupConfirm').hidden = false;
+            document.getElementById('bcCancel').focus();
+        }
+
+        function finishBackupApply(message) {
+            clearSelection(false, true);
+            afterDataChange();
+            closeModal();
+            showToast(message);
+        }
+
+        function handleImportFile(file) {
+            setBackupError('');
+            if (!file) return;
+            if (file.size > 2 * 1024 * 1024) { setBackupError('That file is too large to be an attendance backup.'); return; }
+            const reader = new FileReader();
+            reader.onerror = () => setBackupError('That file could not be read.');
+            reader.onload = () => {
+                let parsed;
+                try { parsed = JSON.parse(String(reader.result)); } catch (e) { setBackupError('That file is not valid JSON.'); return; }
+                const r = validateBackup(parsed);
+                if (!r.ok) { setBackupError(`Not a usable backup: ${r.error}`); return; }
+                const when = r.meta.exportedAt ? new Date(r.meta.exportedAt) : null;
+                const whenText = when && !isNaN(when) ? ` Exported ${when.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}.` : '';
+                askBackupConfirm({
+                    title: 'Replace all data with this backup?',
+                    text: `Everything currently in the dashboard will be replaced${r.meta.years.length ? ' (backup covers ' + r.meta.years.join(', ') + ')' : ''}.${whenText}`,
+                    marked: r.meta.marked, leave: r.meta.leave, okLabel: 'Replace data',
+                    apply: () => { replaceMaps(r.data, r.leave); finishBackupApply('Backup imported'); }
+                });
+            };
+            reader.readAsText(file);
+        }
+
+        function askRestoreSample() {
+            const c = countEntries(SAMPLE_DATA, SAMPLE_LEAVE);
+            askBackupConfirm({
+                title: 'Restore the sample data?',
+                text: 'Everything in the dashboard (all years) will be replaced with the original sample data.',
+                marked: c.marked, leave: c.leave, okLabel: 'Restore sample',
+                apply: () => { replaceMaps(SAMPLE_DATA, SAMPLE_LEAVE); finishBackupApply('Sample data restored'); }
+            });
+        }
+
+        function wireFeatureControls() {
+            const on = (id, ev, fn) => document.getElementById(id).addEventListener(ev, fn);
+            on('todayJumpBtn', 'click', jumpToToday);
+            on('markTodayBtn', 'click', markToday);
+            on('fillBlanksBtn', 'click', fillBlanks);
+            on('selectModeBtn', 'click', () => setSelectMode(!selectMode));
+            on('selOnTime', 'click', () => applySelectionStatus('On Time'));
+            on('selLate', 'click', () => applySelectionStatus('Late'));
+            on('selBlank', 'click', () => applySelectionStatus('Blank'));
+            on('selAbsent', 'click', openBulkLeave);
+            on('selClear', 'click', () => clearSelection(true, false));
+            on('toastUndo', 'click', undoLast);
+            ['mouseenter', 'focusin'].forEach(ev => on('toast', ev, pauseToast));
+            ['mouseleave', 'focusout'].forEach(ev => on('toast', ev, resumeToast));
+            on('backupBtn', 'click', openBackupModal);
+            on('backupModal', 'click', e => { if (e.target === document.getElementById('backupModal')) closeModal(); });
+            on('exportBtn', 'click', exportBackup);
+            on('importBtn', 'click', () => document.getElementById('importFile').click());
+            on('importFile', 'change', e => handleImportFile(e.target.files && e.target.files[0]));
+            on('restoreBtn', 'click', askRestoreSample);
+            on('bcCancel', 'click', resetBackupPanel);
+            on('bcOk', 'click', () => { if (pendingBackup) { const p = pendingBackup; pendingBackup = null; p.apply(); } });
+            wireCalendarSelection();
+        }
+
+        document.querySelectorAll('.month-tab').forEach(tab => {
+            tab.addEventListener('click', () => showMonth(tab.dataset.month));
+        });
+
+        document.getElementById('editModal').addEventListener('click', (e) => {
+            if (e.target === document.getElementById('editModal')) closeModal();
+        });
+        document.getElementById('resetModal').addEventListener('click', (e) => {
+            if (e.target === document.getElementById('resetModal')) closeModal();
+        });
+        document.getElementById('resetBtn').addEventListener('click', openResetModal);
+        document.getElementById('leaveModal').addEventListener('click', (e) => {
+            if (e.target === document.getElementById('leaveModal')) closeModal();
+        });
+
+        document.addEventListener('keydown', (e) => {
+            const modalOpen = !!document.querySelector('.modal-overlay.show');
+            if (e.key === 'Escape') {
+                if (modalOpen) closeModal();
+                else if (selectMode || selection.size) clearSelection(true, true);
+                return;
+            }
+            if ((e.ctrlKey || e.metaKey) && (e.key === 'z' || e.key === 'Z') && currentUndo && !modalOpen) {
+                e.preventDefault();
+                undoLast();
+            }
+        });
+
+        function updateLeaveBalance() {
+            const used = getLeaveUsed();
+            const elRem = YEARLY_LIMITS.EL - used.EL;
+            const clRem = YEARLY_LIMITS.CL - used.CL;
+            const slRem = YEARLY_LIMITS.SL - used.SL;
+            const lwpUsed = used.LWP;
+
+            document.getElementById('elRemainingVal').textContent = elRem;
+            document.getElementById('clRemainingVal').textContent = clRem;
+            document.getElementById('slRemainingVal').textContent = slRem;
+            document.getElementById('lwpUsedVal').textContent = lwpUsed;
+
+            document.getElementById('elRemainingBar').style.width = Math.max(0, (elRem / YEARLY_LIMITS.EL) * 100) + '%';
+            document.getElementById('clRemainingBar').style.width = Math.max(0, (clRem / YEARLY_LIMITS.CL) * 100) + '%';
+            document.getElementById('slRemainingBar').style.width = Math.max(0, (slRem / YEARLY_LIMITS.SL) * 100) + '%';
+            document.getElementById('lwpUsedBar').style.width = Math.min(100, Math.max(0, (lwpUsed / 10) * 100)) + '%';
+        }
+
+        wireFeatureControls();
+        updateNoDataBanner();
+        updateStats();
+        initCharts();
+        showMonth(currentMonth);
+        updateSaveIndicator();
+    </script>
+</body>
+</html>
